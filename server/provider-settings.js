@@ -1,12 +1,14 @@
 const crypto = require('crypto');
 const express = require('express');
 const { z } = require('zod');
+const { MODEL_CAPABILITIES } = require('./models');
 
 const settingsInput = z.object({
   provider: z.literal('azure-openai'),
   endpoint: z.string().url(),
   apiKey: z.string().trim().min(1).max(4096),
   deploymentName: z.string().trim().min(1).max(160),
+  modelId: z.enum(Object.keys(MODEL_CAPABILITIES)),
 });
 
 function encryptionKey(value) {
@@ -47,22 +49,33 @@ function createProviderSettingsRepository(database, keyValue) {
     async get(user) {
       const userId = await ensureUser(user);
       const result = await database.query(
-        `SELECT provider, endpoint, deployment_name AS "deploymentName"
+        `SELECT provider, endpoint, deployment_name AS "deploymentName", model_id AS "modelId"
          FROM provider_settings WHERE user_id = $1`, [userId],
       );
       return result.rows[0] || null;
+    },
+
+    async getRuntime(user) {
+      const userId = await ensureUser(user);
+      const result = await database.query(
+        `SELECT endpoint, deployment_name AS "deploymentName", model_id AS "modelId", encrypted_api_key AS "encryptedApiKey"
+         FROM provider_settings WHERE user_id = $1`, [userId],
+      );
+      const settings = result.rows[0];
+      return settings && { ...settings, apiKey: decryptApiKey(settings.encryptedApiKey, keyValue) };
     },
 
     async save(user, settings) {
       const userId = await ensureUser(user);
       const encryptedApiKey = encryptApiKey(settings.apiKey, keyValue);
       const result = await database.query(
-        `INSERT INTO provider_settings (user_id, provider, endpoint, deployment_name, encrypted_api_key)
-         VALUES ($1, $2, $3, $4, $5)
+        `INSERT INTO provider_settings (user_id, provider, endpoint, deployment_name, model_id, encrypted_api_key)
+         VALUES ($1, $2, $3, $4, $5, $6)
          ON CONFLICT (user_id) DO UPDATE SET provider = EXCLUDED.provider, endpoint = EXCLUDED.endpoint,
-           deployment_name = EXCLUDED.deployment_name, encrypted_api_key = EXCLUDED.encrypted_api_key, updated_at = NOW()
-         RETURNING provider, endpoint, deployment_name AS "deploymentName"`,
-        [userId, settings.provider, settings.endpoint, settings.deploymentName, encryptedApiKey],
+           deployment_name = EXCLUDED.deployment_name, model_id = EXCLUDED.model_id,
+           encrypted_api_key = EXCLUDED.encrypted_api_key, updated_at = NOW()
+         RETURNING provider, endpoint, deployment_name AS "deploymentName", model_id AS "modelId"`,
+        [userId, settings.provider, settings.endpoint, settings.deploymentName, settings.modelId, encryptedApiKey],
       );
       return result.rows[0];
     },

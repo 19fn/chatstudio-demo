@@ -46,11 +46,17 @@ button:disabled, select:disabled, textarea:disabled, input:disabled { cursor: no
   position: relative;
   z-index: 12;
 }
-.brand { display: flex; align-items: center; color: var(--ink); text-decoration: none; }
-.brand-logo { display: block; width: 92px; height: 58px; object-fit: contain; }
-.account-actions { display: flex; align-items: center; gap: 12px; }
-.account-name { color: var(--muted); font-size: 14px; }
+.account-actions { display: flex; align-items: center; gap: 12px; margin-left: auto; }
 .account-menu { position: relative; }
+.account-menu-toggle { display: grid; width: 92px; height: 58px; place-items: center; overflow: hidden; border: 0; background: transparent; padding: 0; color: var(--ink); }
+.account-menu-logo { display: block; width: 92px; height: 58px; object-fit: contain; transition: opacity 160ms ease; }
+.account-menu-icon, .account-menu-icon::before, .account-menu-icon::after { display: block; width: 24px; height: 2px; background: currentColor; }
+.account-menu-icon { position: absolute; opacity: 0; transition: opacity 160ms ease; }
+.account-menu-icon::before, .account-menu-icon::after { content: ''; position: absolute; left: 0; }
+.account-menu-icon::before { top: -7px; }
+.account-menu-icon::after { top: 7px; }
+.account-menu-toggle:hover .account-menu-logo, .account-menu-toggle:focus-visible .account-menu-logo { opacity: 0; }
+.account-menu-toggle:hover .account-menu-icon, .account-menu-toggle:focus-visible .account-menu-icon { opacity: 1; }
 .account-menu-items { position: absolute; top: calc(100% + 8px); right: 0; z-index: 13; display: grid; width: 190px; padding: 6px; border: 1px solid var(--line); border-radius: 6px; background: var(--surface); box-shadow: var(--shadow); }
 .account-menu-items button { min-height: 38px; border: 0; border-radius: 4px; background: transparent; color: var(--ink); padding: 0 10px; text-align: left; font-weight: 700; }
 .account-menu-items button:hover, .account-menu-items button:focus-visible { background: var(--accent-soft); }
@@ -159,7 +165,6 @@ dialog::backdrop { background: rgba(12, 14, 16, 0.58); }
 @media (max-width: 720px) {
   .app-header { padding: 0 14px; }
   .auth-banner span { display: none; }
-  .account-name { display: none; }
   .workspace { height: calc(100vh - 130px); display: block; }
   .sidebar { position: fixed; z-index: 11; top: 68px; left: 0; bottom: 0; width: min(300px, 88vw); box-shadow: var(--shadow); transform: translateX(-105%); transition: transform 180ms ease; }
   .sidebar.open { transform: translateX(0); }
@@ -171,6 +176,6 @@ dialog::backdrop { background: rgba(12, 14, 16, 0.58); }
   .message-viewport { padding: 22px 16px; }
   .prompt-grid { grid-template-columns: 1fr; }
   .composer { margin: 0 10px; }
-  .brand-logo { width: 70px; height: 48px; }
+  .account-menu-toggle, .account-menu-logo { width: 70px; height: 48px; }
   .welcome { margin-top: 2vh; }
 }

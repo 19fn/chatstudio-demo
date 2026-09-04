@@ -14,14 +14,13 @@
   <body>
     <header class="app-header">
       <button class="icon-button mobile-only" id="navigation-toggle" type="button" aria-label="Open conversations" title="Open conversations">☰</button>
-      <a class="brand" href="/" aria-label="Chat Studio home">
-        <img src="/img/logo2.png" alt="" class="brand-logo">
-      </a>
       <div class="account-actions">
-        <span id="account-name" class="account-name">Guest</span>
         <button class="button button-secondary" id="sign-in-button" type="button">Sign in</button>
         <div class="account-menu hidden" id="account-menu">
-          <button class="icon-button" id="account-menu-toggle" type="button" aria-label="Open account menu" aria-expanded="false" aria-controls="account-menu-items" title="Account menu">●</button>
+          <button class="account-menu-toggle" id="account-menu-toggle" type="button" aria-label="Open account menu" aria-expanded="false" aria-controls="account-menu-items" title="Account menu">
+            <img src="/img/logo2.png" alt="" class="account-menu-logo">
+            <span class="account-menu-icon" aria-hidden="true"></span>
+          </button>
           <div class="account-menu-items hidden" id="account-menu-items" role="menu" aria-label="Account actions">
             <button id="profile-toggle" type="button" role="menuitem">Profile details</button>
             <button id="provider-settings-toggle" type="button" role="menuitem">Provider settings</button>

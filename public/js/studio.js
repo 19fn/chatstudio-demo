@@ -1,6 +1,7 @@
 import { marked } from '/vendor/marked/marked.esm.js';
 import DOMPurify from '/vendor/dompurify/purify.es.mjs';
 import { reconcileConversationSelection } from './conversation-selection.js';
+import { profileDetails } from './profile-data.js';
 
 const state = {
   authConfig: null,
@@ -15,7 +16,7 @@ const state = {
 };
 
 const elements = Object.fromEntries([
-  'auth-banner', 'sign-in-button', 'sign-out-button', 'account-name', 'new-conversation',
+  'auth-banner', 'sign-in-button', 'sign-out-button', 'profile-toggle', 'account-name', 'new-conversation',
   'conversation-list', 'conversation-title', 'model-select', 'mode-picker', 'mode-label',
   'rename-conversation', 'clear-conversation', 'delete-conversation',
   'system-message', 'max-tokens', 'max-tokens-value', 'temperature', 'temperature-value',
@@ -24,6 +25,7 @@ const elements = Object.fromEntries([
   'attachment-preview', 'token-usage', 'details-toggle', 'details-close', 'details-panel',
   'navigation-toggle', 'navigation-panel', 'knowledge-toggle', 'knowledge-dialog',
   'knowledge-close', 'knowledge-role-note', 'upload-button', 'refresh-files', 'file-list', 'toast',
+  'profile-dialog', 'profile-close', 'profile-details',
 ].map((id) => [id, document.getElementById(id)]));
 
 const prompts = [
@@ -50,13 +52,24 @@ function showToast(message) {
   window.setTimeout(() => elements.toast.classList.add('hidden'), 3500);
 }
 
+function renderProfile(verifiedProfile) {
+  elements['profile-details'].replaceChildren(...profileDetails(state.account, state.authConfig, verifiedProfile).flatMap(([label, value]) => {
+    const term = document.createElement('dt');
+    term.textContent = label;
+    const description = document.createElement('dd');
+    description.textContent = value;
+    return [term, description];
+  }));
+}
+
 function setAuthenticated(account, token) {
   state.account = account;
   state.accessToken = token;
   const authenticated = Boolean(account);
   elements['auth-banner'].classList.toggle('hidden', authenticated);
   elements['sign-in-button'].classList.toggle('hidden', authenticated);
-  elements['sign-out-button'].classList.toggle('hidden', !authenticated || state.authConfig?.disabled);
+  elements['sign-out-button'].classList.toggle('hidden', !authenticated);
+  elements['profile-toggle'].classList.toggle('hidden', !authenticated);
   elements['account-name'].textContent = account?.name || (authenticated ? 'Local Developer' : 'Guest');
   elements['chat-input'].disabled = !authenticated;
   elements['chat-input'].placeholder = authenticated ? 'Message Chat Studio' : 'Sign in to start a conversation';
@@ -479,6 +492,12 @@ function bindEvents() {
   elements['navigation-toggle'].addEventListener('click', () => elements['navigation-panel'].classList.toggle('open'));
   elements['knowledge-toggle'].addEventListener('click', async () => { elements['knowledge-dialog'].showModal(); await loadFiles(); });
   elements['knowledge-close'].addEventListener('click', () => elements['knowledge-dialog'].close());
+  elements['profile-toggle'].addEventListener('click', async () => {
+    const profile = await apiFetch('/api/profile');
+    renderProfile(profile);
+    elements['profile-dialog'].showModal();
+  });
+  elements['profile-close'].addEventListener('click', () => elements['profile-dialog'].close());
   elements['refresh-files'].addEventListener('click', () => loadFiles().catch((error) => showToast(error.message)));
   elements['upload-button'].addEventListener('click', () => elements['file-input'].click());
   elements['sign-in-button'].addEventListener('click', async () => {

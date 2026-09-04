@@ -18,4 +18,15 @@ describe('provider settings UI', () => {
     expect(document.querySelector('#provider-api-key')?.getAttribute('type')).toBe('password');
     expect(document.querySelector('#provider-deployment')).not.toBeNull();
   });
+
+  it('groups authenticated account actions in one account menu', () => {
+    const document = new JSDOM(page).window.document;
+    const accountMenu = document.querySelector('#account-menu');
+
+    expect(accountMenu).not.toBeNull();
+    expect(document.querySelector('#account-menu-toggle')).not.toBeNull();
+    expect(accountMenu?.querySelector('#profile-toggle')?.textContent).toBe('Profile details');
+    expect(accountMenu?.querySelector('#provider-settings-toggle')?.textContent).toBe('Provider settings');
+    expect(accountMenu?.querySelector('#sign-out-button')?.textContent).toBe('Sign out');
+  });
 });

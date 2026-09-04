@@ -16,7 +16,7 @@ const state = {
 };
 
 const elements = Object.fromEntries([
-  'auth-banner', 'sign-in-button', 'sign-out-button', 'profile-toggle', 'provider-settings-toggle', 'account-name', 'new-conversation',
+  'auth-banner', 'sign-in-button', 'sign-out-button', 'account-menu', 'account-menu-toggle', 'account-menu-items', 'profile-toggle', 'provider-settings-toggle', 'account-name', 'new-conversation',
   'conversation-list', 'conversation-title', 'model-select', 'mode-picker', 'mode-label',
   'rename-conversation', 'clear-conversation', 'delete-conversation',
   'system-message', 'max-tokens', 'max-tokens-value', 'temperature', 'temperature-value',
@@ -54,6 +54,11 @@ function showToast(message) {
   window.setTimeout(() => elements.toast.classList.add('hidden'), 3500);
 }
 
+function closeAccountMenu() {
+  elements['account-menu-items'].classList.add('hidden');
+  elements['account-menu-toggle'].setAttribute('aria-expanded', 'false');
+}
+
 function renderProfile(verifiedProfile) {
   elements['profile-details'].replaceChildren(...profileDetails(state.account, state.authConfig, verifiedProfile).flatMap(([label, value]) => {
     const term = document.createElement('dt');
@@ -79,9 +84,8 @@ function setAuthenticated(account, token) {
   const authenticated = Boolean(account);
   elements['auth-banner'].classList.toggle('hidden', authenticated);
   elements['sign-in-button'].classList.toggle('hidden', authenticated);
-  elements['sign-out-button'].classList.toggle('hidden', !authenticated);
-  elements['profile-toggle'].classList.toggle('hidden', !authenticated);
-  elements['provider-settings-toggle'].classList.toggle('hidden', !authenticated);
+  elements['account-menu'].classList.toggle('hidden', !authenticated);
+  if (!authenticated) closeAccountMenu();
   elements['provider-settings-toggle'].disabled = !state.authConfig?.providerSettingsEnabled;
   elements['provider-settings-toggle'].title = state.authConfig?.providerSettingsEnabled
     ? 'Open provider settings'
@@ -508,13 +512,21 @@ function bindEvents() {
   elements['navigation-toggle'].addEventListener('click', () => elements['navigation-panel'].classList.toggle('open'));
   elements['knowledge-toggle'].addEventListener('click', async () => { elements['knowledge-dialog'].showModal(); await loadFiles(); });
   elements['knowledge-close'].addEventListener('click', () => elements['knowledge-dialog'].close());
+  elements['account-menu-toggle'].addEventListener('click', () => {
+    const open = elements['account-menu-items'].classList.toggle('hidden');
+    elements['account-menu-toggle'].setAttribute('aria-expanded', String(!open));
+  });
   elements['profile-toggle'].addEventListener('click', async () => {
+    closeAccountMenu();
     const profile = await apiFetch('/api/profile');
     renderProfile(profile);
     elements['profile-dialog'].showModal();
   });
   elements['profile-close'].addEventListener('click', () => elements['profile-dialog'].close());
-  elements['provider-settings-toggle'].addEventListener('click', () => openProviderSettings().catch((error) => showToast(error.message)));
+  elements['provider-settings-toggle'].addEventListener('click', () => {
+    closeAccountMenu();
+    openProviderSettings().catch((error) => showToast(error.message));
+  });
   elements['provider-settings-close'].addEventListener('click', () => elements['provider-settings-dialog'].close());
   elements['provider-settings-form'].addEventListener('submit', async (event) => {
     event.preventDefault();
@@ -548,7 +560,13 @@ function bindEvents() {
       showToast(error.errorMessage || error.message || 'Sign-in failed.');
     }
   });
-  elements['sign-out-button'].addEventListener('click', () => authClient?.logoutRedirect({ postLogoutRedirectUri: location.origin }));
+  elements['sign-out-button'].addEventListener('click', () => {
+    closeAccountMenu();
+    authClient?.logoutRedirect({ postLogoutRedirectUri: location.origin });
+  });
+  document.addEventListener('click', (event) => {
+    if (!elements['account-menu'].contains(event.target)) closeAccountMenu();
+  });
 }
 
 async function main() {

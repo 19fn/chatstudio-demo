@@ -36,6 +36,7 @@ button:disabled, select:disabled, textarea:disabled, input:disabled { cursor: no
   border-bottom: 4px solid var(--yellow);
 }
 .brand { display: flex; align-items: center; gap: 14px; color: white; text-decoration: none; font: 700 20px "Space Grotesk", sans-serif; }
+.brand-logo { width: 70px; height: 32px; object-fit: contain; object-position: left center; }
 .account-actions { display: flex; align-items: center; gap: 12px; }
 .account-name { color: #c6c9cc; font-size: 14px; }
 .auth-banner { padding: 10px 24px; background: var(--yellow); color: #111; text-align: center; font-size: 14px; }
@@ -132,5 +133,6 @@ dialog::backdrop { background: rgba(12, 14, 16, 0.58); }
   .message-viewport { padding: 22px 16px; }
   .prompt-grid { grid-template-columns: 1fr; }
   .composer { margin: 0 10px; }
+  .brand-logo { width: 54px; }
   .welcome { margin-top: 2vh; }
 }

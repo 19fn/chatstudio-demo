@@ -25,19 +25,19 @@ describe('provider settings', () => {
   it('saves validated settings without returning the API key', async () => {
     const repository = {
       save: vi.fn().mockResolvedValue({
-        provider: 'azure-openai', endpoint: 'https://example.openai.azure.com', deploymentName: 'chat',
+        provider: 'azure-openai', endpoint: 'https://example.openai.azure.com', deploymentName: 'chat', modelId: 'gpt-5.4-mini',
       }),
       get: vi.fn().mockResolvedValue(null),
     };
     const response = await request(createApp({ config, providerSettingsRepository: repository }))
       .put('/api/provider-settings')
       .send({
-        provider: 'azure-openai', endpoint: 'https://example.openai.azure.com', apiKey: 'secret-api-key', deploymentName: 'chat',
+        provider: 'azure-openai', endpoint: 'https://example.openai.azure.com', apiKey: 'secret-api-key', deploymentName: 'chat', modelId: 'gpt-5.4-mini',
       });
 
     expect(response.status).toBe(200);
     expect(response.body).toEqual({
-      settings: { provider: 'azure-openai', endpoint: 'https://example.openai.azure.com', deploymentName: 'chat' },
+      settings: { provider: 'azure-openai', endpoint: 'https://example.openai.azure.com', deploymentName: 'chat', modelId: 'gpt-5.4-mini' },
     });
     expect(JSON.stringify(response.body)).not.toContain('secret-api-key');
     expect(repository.save).toHaveBeenCalledWith(

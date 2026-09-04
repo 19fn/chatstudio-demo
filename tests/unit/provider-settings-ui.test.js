@@ -17,6 +17,7 @@ describe('provider settings UI', () => {
     expect(document.querySelector('#provider-endpoint')?.getAttribute('type')).toBe('url');
     expect(document.querySelector('#provider-api-key')?.getAttribute('type')).toBe('password');
     expect(document.querySelector('#provider-deployment')).not.toBeNull();
+    expect(document.querySelector('#provider-model')?.value).toBe('gpt-5.4-mini');
   });
 
   it('groups authenticated account actions in one account menu', () => {

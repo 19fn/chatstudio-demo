@@ -56,18 +56,19 @@ describe('Chat Studio container', () => {
         apiKey: 'integration-secret',
         deploymentName: 'chat',
         modelId: 'gpt-5.4-mini',
+        apiVersion: '2025-04-01-preview',
       }),
     });
     expect(saved.status).toBe(200);
     expect(await saved.json()).toEqual({
-      settings: { provider: 'azure-openai', endpoint: 'https://example.openai.azure.com', deploymentName: 'chat', modelId: 'gpt-5.4-mini' },
+      settings: { provider: 'azure-openai', endpoint: 'https://example.openai.azure.com', deploymentName: 'chat', modelId: 'gpt-5.4-mini', apiVersion: '2025-04-01-preview' },
     });
 
     const loaded = await fetch(`${baseUrl}/api/provider-settings`);
     expect(loaded.status).toBe(200);
     const body = await loaded.json();
     expect(body).toEqual({
-      settings: { provider: 'azure-openai', endpoint: 'https://example.openai.azure.com', deploymentName: 'chat', modelId: 'gpt-5.4-mini' },
+      settings: { provider: 'azure-openai', endpoint: 'https://example.openai.azure.com', deploymentName: 'chat', modelId: 'gpt-5.4-mini', apiVersion: '2025-04-01-preview' },
     });
     expect(JSON.stringify(body)).not.toContain('integration-secret');
   });

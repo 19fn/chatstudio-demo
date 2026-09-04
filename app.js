@@ -41,7 +41,7 @@ function createApp(options = {}) {
         aiClient: aiClientFactory({
           endpoint: savedSettings.endpoint,
           key: savedSettings.apiKey,
-          apiVersion: config.ai.apiVersion,
+          apiVersion: savedSettings.apiVersion,
           timeoutMs: config.ai.timeoutMs,
         }),
         getModel: createModelRegistry({ [savedSettings.modelId]: savedSettings.deploymentName }, savedSettings.modelId).getModel,

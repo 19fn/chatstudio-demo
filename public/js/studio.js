@@ -27,7 +27,7 @@ const elements = Object.fromEntries([
   'knowledge-close', 'knowledge-role-note', 'upload-button', 'refresh-files', 'file-list', 'toast',
   'profile-dialog', 'profile-close', 'profile-details',
   'provider-settings-dialog', 'provider-settings-close', 'provider-settings-form', 'provider-select',
-  'provider-endpoint', 'provider-deployment', 'provider-model', 'provider-api-key',
+  'provider-endpoint', 'provider-deployment', 'provider-model', 'provider-api-version', 'provider-api-key',
 ].map((id) => [id, document.getElementById(id)]));
 
 const prompts = [
@@ -75,6 +75,7 @@ async function openProviderSettings() {
   elements['provider-endpoint'].value = settings?.endpoint || '';
   elements['provider-deployment'].value = settings?.deploymentName || '';
   elements['provider-model'].value = settings?.modelId || 'gpt-5.4-mini';
+  elements['provider-api-version'].value = settings?.apiVersion || '2025-04-01-preview';
   elements['provider-api-key'].value = '';
   elements['provider-settings-dialog'].showModal();
 }
@@ -539,12 +540,14 @@ function bindEvents() {
           endpoint: elements['provider-endpoint'].value,
           deploymentName: elements['provider-deployment'].value,
           modelId: elements['provider-model'].value,
+          apiVersion: elements['provider-api-version'].value,
           apiKey: elements['provider-api-key'].value,
         }),
       });
       elements['provider-endpoint'].value = settings.settings.endpoint;
       elements['provider-deployment'].value = settings.settings.deploymentName;
       elements['provider-model'].value = settings.settings.modelId;
+      elements['provider-api-version'].value = settings.settings.apiVersion;
       elements['provider-api-key'].value = '';
       showToast('Provider settings saved.');
     } catch (error) {

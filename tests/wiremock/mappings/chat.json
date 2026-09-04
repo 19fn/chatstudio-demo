@@ -1,0 +1,14 @@
+{
+  "request": {
+    "method": "POST",
+    "urlPathPattern": "/(data/)?openai/deployments/.+/chat/completions"
+  },
+  "response": {
+    "status": 200,
+    "headers": { "Content-Type": "application/json" },
+    "jsonBody": {
+      "choices": [{ "message": { "content": "Mock Chat Studio response" } }],
+      "usage": { "prompt_tokens": 5, "completion_tokens": 4, "total_tokens": 9 }
+    }
+  }
+}

@@ -1,0 +1,53 @@
+name: chat-studio-integration
+
+services:
+  database:
+    image: postgres:17-alpine
+    environment:
+      POSTGRES_DB: chatstudio_test
+      POSTGRES_USER: chatstudio
+      POSTGRES_PASSWORD: chatstudio
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U chatstudio -d chatstudio_test"]
+      interval: 3s
+      timeout: 3s
+      retries: 10
+
+  app:
+    build:
+      context: .
+      target: test
+    command: npm start
+    environment:
+      NODE_ENV: test
+      PORT: 3000
+      DATABASE_URL: postgres://chatstudio:chatstudio@database:5432/chatstudio_test
+      AI_API_ENDPOINT: http://mock-upstream:8080
+      AI_API_KEY: test-key
+      AUTH_DISABLED: "true"
+    depends_on:
+      database:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "node", "-e", "fetch('http://127.0.0.1:3000/health/live').then(r => process.exit(r.ok ? 0 : 1)).catch(() => process.exit(1))"]
+      interval: 3s
+      timeout: 3s
+      retries: 10
+
+  mock-upstream:
+    image: wiremock/wiremock:3.13.1
+    volumes:
+      - ./tests/wiremock:/home/wiremock:ro
+
+  integration:
+    build:
+      context: .
+      target: test
+    command: npm run test:integration
+    environment:
+      CHAT_STUDIO_BASE_URL: http://app:3000
+    depends_on:
+      app:
+        condition: service_healthy
+      mock-upstream:
+        condition: service_started

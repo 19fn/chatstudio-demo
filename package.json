@@ -1,0 +1,45 @@
+{
+  "name": "chat-studio",
+  "version": "1.0.0",
+  "description": "A secure, multimodal AI workspace",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "node --watch server.js",
+    "test": "npm run test:unit",
+    "test:unit": "vitest run",
+    "test:watch": "vitest",
+    "test:coverage": "vitest run --coverage",
+    "test:integration": "vitest run --config vitest.integration.config.js",
+    "lint": "eslint ."
+  },
+  "engines": {
+    "node": ">=22"
+  },
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "@azure/msal-browser": "^4.30.0",
+    "axios": "^1.20.0",
+    "dompurify": "^3.4.14",
+    "dotenv": "^16.6.1",
+    "express": "^5.2.1",
+    "express-rate-limit": "^8.7.0",
+    "form-data": "^4.0.6",
+    "helmet": "^8.3.0",
+    "jose": "^6.2.10",
+    "lucide": "^0.544.0",
+    "marked": "^16.4.2",
+    "multer": "^2.3.0",
+    "pg": "^8.23.0",
+    "zod": "^4.5.4"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.62.1",
+    "eslint": "^10.9.1",
+    "jsdom": "^30.0.1",
+    "nock": "^14.0.17",
+    "supertest": "^7.2.2",
+    "vitest": "^3.2.7"
+  }
+}

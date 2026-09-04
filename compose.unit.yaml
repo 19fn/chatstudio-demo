@@ -1,0 +1,10 @@
+name: chat-studio-unit
+
+services:
+  unit:
+    build:
+      context: .
+      target: test
+    command: npm run test:unit
+    environment:
+      NODE_ENV: test

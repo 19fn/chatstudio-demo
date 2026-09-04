@@ -30,6 +30,7 @@ Update the provided `.env.dev` file with your development values. It is ignored 
 - `AI_API_KEY`: gateway API key
 - `AI_MODEL_DEPLOYMENTS`: JSON object mapping Chat Studio model IDs to upstream deployment names
 - `AI_DEFAULT_MODEL`: an enabled model ID selected by default
+- `PROVIDER_SETTINGS_ENCRYPTION_KEY`: base64-encoded 32-byte key used to encrypt user-managed provider API keys in PostgreSQL
 - `LOG_LEVEL`: logging threshold (`debug`, `info`, `warn`, or `error`); development defaults to `debug`
 - `DATABASE_URL`: PostgreSQL connection string
 - `ENTRA_TENANT_ID`: Microsoft Entra tenant identifier
@@ -50,6 +51,10 @@ AI_DEFAULT_MODEL=gpt-5.4-mini
 ```
 
 Capabilities remain server-owned and validated. Unknown model IDs or a default model missing from the mapping prevent startup.
+
+Generate the provider settings encryption key with `openssl rand -base64 32`. Keep it stable for each environment: changing it prevents the server from decrypting existing saved provider API keys.
+
+Signed-in users can configure Azure OpenAI endpoint, API key, and deployment name from the provider settings control. The API key is encrypted before database persistence and is never returned to the browser after saving.
 
 ## Microsoft Entra Setup
 

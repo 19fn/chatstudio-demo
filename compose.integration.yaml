@@ -24,6 +24,7 @@ services:
       DATABASE_URL: postgres://chatstudio:chatstudio@database:5432/chatstudio_test
       AI_API_ENDPOINT: http://mock-upstream:8080
       AI_API_KEY: test-key
+      PROVIDER_SETTINGS_ENCRYPTION_KEY: BwcHBwcHBwcHBwcHBwcHBwcHBwcHBwcHBwcHBwcHBwc=
       AUTH_DISABLED: "true"
     depends_on:
       database:

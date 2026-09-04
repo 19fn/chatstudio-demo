@@ -45,4 +45,29 @@ describe('Chat Studio container', () => {
     expect(stored.status).toBe(200);
     expect((await stored.json()).messages).toHaveLength(2);
   });
+
+  it('persists encrypted provider settings without returning the API key', async () => {
+    const saved = await fetch(`${baseUrl}/api/provider-settings`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        provider: 'azure-openai',
+        endpoint: 'https://example.openai.azure.com',
+        apiKey: 'integration-secret',
+        deploymentName: 'chat',
+      }),
+    });
+    expect(saved.status).toBe(200);
+    expect(await saved.json()).toEqual({
+      settings: { provider: 'azure-openai', endpoint: 'https://example.openai.azure.com', deploymentName: 'chat' },
+    });
+
+    const loaded = await fetch(`${baseUrl}/api/provider-settings`);
+    expect(loaded.status).toBe(200);
+    const body = await loaded.json();
+    expect(body).toEqual({
+      settings: { provider: 'azure-openai', endpoint: 'https://example.openai.azure.com', deploymentName: 'chat' },
+    });
+    expect(JSON.stringify(body)).not.toContain('integration-secret');
+  });
 });

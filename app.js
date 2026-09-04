@@ -89,7 +89,7 @@ function createApp(options = {}) {
   app.use(auth.requireAuth);
   if (conversationRepository) {
     app.use('/api/conversations', createConversationRouter(conversationRepository));
-    app.use(createChatRouter({ aiClient, conversationRepository, getModel: models.getModel }));
+    app.use(createChatRouter({ aiClient, conversationRepository, getModel: models.getModel, logger }));
   }
   app.use('/upload', auth.requireRole(config.auth.adminRole));
   app.use('/deletefile', auth.requireRole(config.auth.adminRole));

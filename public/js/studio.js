@@ -56,7 +56,7 @@ function setAuthenticated(account, token) {
   const authenticated = Boolean(account);
   elements['auth-banner'].classList.toggle('hidden', authenticated);
   elements['sign-in-button'].classList.toggle('hidden', authenticated);
-  elements['sign-out-button'].classList.toggle('hidden', !authenticated || state.authConfig?.disabled);
+  elements['sign-out-button'].classList.toggle('hidden', !authenticated);
   elements['account-name'].textContent = account?.name || (authenticated ? 'Local Developer' : 'Guest');
   elements['chat-input'].disabled = !authenticated;
   elements['chat-input'].placeholder = authenticated ? 'Message Chat Studio' : 'Sign in to start a conversation';

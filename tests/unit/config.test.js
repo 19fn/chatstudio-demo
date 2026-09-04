@@ -26,6 +26,11 @@ describe('configuration', () => {
     expect(loadConfig({ NODE_ENV: 'development', LOG_LEVEL: 'warn' }).logLevel).toBe('warn');
   });
 
+  it('loads the provider settings encryption key separately from runtime AI configuration', () => {
+    const config = loadConfig({ PROVIDER_SETTINGS_ENCRYPTION_KEY: 'test-key' });
+    expect(config.providerSettingsEncryptionKey).toBe('test-key');
+  });
+
   it('parses the deployment map and rejects malformed JSON', () => {
     const config = loadConfig({
       AI_MODEL_DEPLOYMENTS: '{"gpt-5.4-mini":"mini-deployment","gpt-5.4":"full-deployment"}',

@@ -20,6 +20,7 @@
       <div class="account-actions">
         <span id="account-name" class="account-name">Guest</span>
         <button class="icon-button hidden" id="profile-toggle" type="button" aria-label="Open profile" title="Open profile">◉</button>
+        <button class="icon-button hidden" id="provider-settings-toggle" type="button" aria-label="Open provider settings" title="Open provider settings">⚙</button>
         <button class="button button-secondary" id="sign-in-button" type="button">Sign in</button>
         <button class="button button-secondary hidden" id="sign-out-button" type="button">Sign out</button>
       </div>
@@ -123,6 +124,29 @@
           <button class="icon-button" id="profile-close" type="button" aria-label="Close profile">×</button>
         </div>
         <dl id="profile-details" class="profile-details"></dl>
+      </dialog>
+
+      <dialog id="provider-settings-dialog" aria-labelledby="provider-settings-title">
+        <div class="dialog-heading">
+          <div><span class="eyebrow">Connections</span><h2 id="provider-settings-title">LLM provider</h2></div>
+          <button class="icon-button" id="provider-settings-close" type="button" aria-label="Close provider settings">×</button>
+        </div>
+        <form id="provider-settings-form" class="provider-settings-form">
+          <label for="provider-select">Provider</label>
+          <select id="provider-select" name="provider">
+            <option value="azure-openai">Azure OpenAI</option>
+          </select>
+          <label for="provider-endpoint">Endpoint</label>
+          <input id="provider-endpoint" name="endpoint" type="url" placeholder="https://your-resource.openai.azure.com" required>
+          <label for="provider-deployment">Deployment name</label>
+          <input id="provider-deployment" name="deploymentName" type="text" required>
+          <label for="provider-api-key">API key</label>
+          <input id="provider-api-key" name="apiKey" type="password" autocomplete="new-password" required>
+          <p class="provider-settings-note">Saved keys are encrypted and are never shown again.</p>
+          <div class="knowledge-actions">
+            <button class="button button-primary" type="submit">Save provider</button>
+          </div>
+        </form>
       </dialog>
     </main>
     <div id="toast" class="toast hidden" role="status" aria-live="polite"></div>

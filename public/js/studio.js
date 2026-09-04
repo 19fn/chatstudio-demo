@@ -16,7 +16,7 @@ const state = {
 };
 
 const elements = Object.fromEntries([
-  'auth-banner', 'sign-in-button', 'sign-out-button', 'account-menu', 'account-menu-toggle', 'account-menu-items', 'profile-toggle', 'provider-settings-toggle', 'account-name', 'new-conversation',
+  'auth-banner', 'sign-in-button', 'sign-out-button', 'account-menu', 'account-menu-toggle', 'account-menu-items', 'profile-toggle', 'provider-settings-toggle', 'new-conversation',
   'conversation-list', 'conversation-title', 'model-select', 'mode-picker', 'mode-label',
   'rename-conversation', 'clear-conversation', 'delete-conversation',
   'system-message', 'max-tokens', 'max-tokens-value', 'temperature', 'temperature-value',
@@ -90,7 +90,6 @@ function setAuthenticated(account, token) {
   elements['provider-settings-toggle'].title = state.authConfig?.providerSettingsEnabled
     ? 'Open provider settings'
     : 'Provider settings require PROVIDER_SETTINGS_ENCRYPTION_KEY';
-  elements['account-name'].textContent = account?.name || (authenticated ? 'Local Developer' : 'Guest');
   elements['chat-input'].disabled = !authenticated;
   elements['chat-input'].placeholder = authenticated ? 'Message Chat Studio' : 'Sign in to start a conversation';
   elements['new-conversation'].disabled = !authenticated;

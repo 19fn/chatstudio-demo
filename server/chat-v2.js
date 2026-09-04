@@ -27,7 +27,7 @@ function buildMessages(input, history) {
   ];
 }
 
-function createChatRouter({ aiClient, conversationRepository, getModel, logger }) {
+function createChatRouter({ resolveRuntime, conversationRepository, logger }) {
   const router = express.Router();
 
   function rejectValidation(request, response, error, details) {
@@ -43,7 +43,8 @@ function createChatRouter({ aiClient, conversationRepository, getModel, logger }
       return null;
     }
     const input = parsed.data;
-    const model = getModel(input.model);
+    const runtime = await resolveRuntime(request.user);
+    const model = runtime.getModel(input.model);
     if (!model) {
       rejectValidation(request, response, 'unsupported_model');
       return null;
@@ -65,15 +66,15 @@ function createChatRouter({ aiClient, conversationRepository, getModel, logger }
       .filter((message) => ['user', 'assistant'].includes(message.role))
       .slice(-20)
       .map(({ role, content }) => ({ role, content }));
-    return { input, model, messages: buildMessages(input, history) };
+    return { input, model, messages: buildMessages(input, history), runtime };
   }
 
   async function handleChat(request, response, next) {
     try {
       const prepared = await prepareChat(request, response);
       if (!prepared) return;
-      const { input, model, messages } = prepared;
-      const result = await aiClient.complete({
+      const { input, model, messages, runtime } = prepared;
+      const result = await runtime.aiClient.complete({
         model,
         mode: input.mode,
         messages,
@@ -100,7 +101,7 @@ function createChatRouter({ aiClient, conversationRepository, getModel, logger }
     try {
       const prepared = await prepareChat(request, response);
       if (!prepared) return;
-      const { input, model, messages } = prepared;
+      const { input, model, messages, runtime } = prepared;
       const controller = new AbortController();
       response.on('close', () => {
         if (!response.writableEnded) controller.abort();
@@ -112,7 +113,7 @@ function createChatRouter({ aiClient, conversationRepository, getModel, logger }
       });
       response.flushHeaders();
       const send = (event) => response.write(`event: ${event.type}\ndata: ${JSON.stringify(event)}\n\n`);
-      const result = await aiClient.stream({
+      const result = await runtime.aiClient.stream({
         model,
         mode: input.mode,
         messages,

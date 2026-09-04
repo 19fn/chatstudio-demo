@@ -29,4 +29,13 @@ describe('provider settings UI', () => {
     expect(accountMenu?.querySelector('#provider-settings-toggle')?.textContent).toBe('Provider settings');
     expect(accountMenu?.querySelector('#sign-out-button')?.textContent).toBe('Sign out');
   });
+
+  it('uses the logo as the account menu trigger', () => {
+    const document = new JSDOM(page).window.document;
+    const trigger = document.querySelector('#account-menu-toggle');
+
+    expect(document.querySelector('header .brand')).toBeNull();
+    expect(trigger?.querySelector('.account-menu-logo')?.getAttribute('src')).toBe('/img/logo2.png');
+    expect(trigger?.querySelector('.account-menu-icon')).not.toBeNull();
+  });
 });

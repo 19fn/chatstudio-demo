@@ -1,0 +1,54 @@
+name: chat-studio-dev
+
+services:
+  app:
+    build:
+      context: .
+      target: development
+    env_file:
+      - .env.dev
+    environment:
+      DATABASE_URL: postgres://${POSTGRES_USER:-chatstudio}:${POSTGRES_PASSWORD:-chatstudio}@database:5432/${POSTGRES_DB:-chatstudio}
+      LOG_LEVEL: ${LOG_LEVEL:-debug}
+      AI_API_ENDPOINT: ${AI_API_ENDPOINT:-}
+      AI_API_KEY: ${AI_API_KEY:-}
+      AI_API_VERSION: ${AI_API_VERSION:-2025-04-01-preview}
+      ENTRA_TENANT_ID: ${ENTRA_TENANT_ID:-}
+      ENTRA_SPA_CLIENT_ID: ${ENTRA_SPA_CLIENT_ID:-}
+      ENTRA_API_CLIENT_ID: ${ENTRA_API_CLIENT_ID:-}
+      ENTRA_API_SCOPE: ${ENTRA_API_SCOPE:-access_as_user}
+      ENTRA_ADMIN_ROLE: ${ENTRA_ADMIN_ROLE:-ChatStudio.Admin}
+      AUTH_DISABLED: ${AUTH_DISABLED:-false}
+      MAX_UPLOAD_MB: ${MAX_UPLOAD_MB:-20}
+      UPSTREAM_TIMEOUT_MS: ${UPSTREAM_TIMEOUT_MS:-60000}
+    ports:
+      - "${PORT:-3000}:3000"
+    volumes:
+      - .:/app
+      - node_modules:/app/node_modules
+    depends_on:
+      database:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "node", "-e", "fetch('http://127.0.0.1:3000/health/live').then(r => process.exit(r.ok ? 0 : 1)).catch(() => process.exit(1))"]
+      interval: 10s
+      timeout: 3s
+      retries: 5
+
+  database:
+    image: postgres:17-alpine
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-chatstudio}
+      POSTGRES_USER: ${POSTGRES_USER:-chatstudio}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-chatstudio}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-chatstudio} -d ${POSTGRES_DB:-chatstudio}"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+volumes:
+  node_modules:
+  postgres_data:

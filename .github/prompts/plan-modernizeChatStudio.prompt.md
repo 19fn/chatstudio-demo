@@ -1,0 +1,79 @@
+## Plan: Modernize Chat Studio
+
+Refactor the legacy EYQ Incubator demo into a shared-deployment-ready “Chat Studio” while preserving its black, white, and yellow visual identity. Keep Express and browser-native JavaScript, replace cosmetic modes with capability-driven workflows, add Entra ID SPA/API authentication and role authorization, persist conversations in PostgreSQL, harden proxy/upload behavior, and provide separate development, unit-test, and integration-test Compose stacks.
+
+**Steps**
+
+### Phase 1: Establish the application boundary and reproducible runtime
+1. Rename product-owned branding and metadata to Chat Studio across the HTML title/header, package metadata, README, container names/workdir, copy, and generated labels. Replace obsolete EYQ-specific sample questions with useful task-oriented prompts. Do not rewrite user-uploaded content under `uploads/`.
+2. Split Express app construction from process startup: add `app.js` that builds/exports the app and dependencies, leave `server.js` responsible for configuration validation, listening, and graceful SIGTERM/SIGINT shutdown. Add `/health/live` and `/health/ready`; readiness checks required configuration, database connectivity, and writable temporary-upload storage without calling the external AI service.
+3. Add centralized runtime configuration and `.env.example` for Incubator-compatible upstream settings, PostgreSQL, Entra tenant/client/audience/role, limits, and deployment names. Do not preserve `INCUBATOR_ENDPOINT` and `INCUBATOR_KEY` as the upstream contract while removing Incubator branding from the product UI.
+4. Harden the Docker image with `npm ci`, a production start command, non-root execution, explicit healthcheck, and minimal copied files. Add `.dockerignore` that excludes `.env`, `.git`, dependencies, tests/reports where appropriate, and `uploads/` so secrets and residual documents never enter build layers. Update `.gitignore` for coverage, Playwright, and local database artifacts.
+
+### Phase 2: Add identity, authorization, and persistence
+5. Add Entra ID authentication for the SPA/API registration topology: use MSAL Browser in the frontend to sign in and acquire an API-scoped bearer token; validate v2 JWT issuer, audience, signature/JWKS, tenant, expiry, and scopes server-side. Expose only non-secret public auth configuration to the SPA. Keep the shell publicly viewable, but disable all AI/data actions and show a concise sign-in-required state until authentication succeeds.
+6. Implement authorization middleware with two levels: any valid authenticated API user may chat, use RAG/vision/summarization/meeting workflows, list accessible shared files, and manage their own conversations; only users carrying the configurable `ChatStudio.Admin` app-role value may upload/delete shared knowledge documents. Return consistent `401` versus `403` JSON errors and render those states clearly in the UI.
+7. Add PostgreSQL persistence and migrations for users, conversations, and ordered messages. Key signed-in users by stable Entra tenant/object IDs, store conversation title/model/mode/timestamps, bound retained context, and support create/list/open/rename/delete/clear operations with ownership checks. Anonymous visitors get no conversation persistence because they cannot execute API calls. Keep shared upstream knowledge-file metadata separate from user-owned conversations.
+8. Replace the process-global `chatHistory` array with a conversation service/repository. Build model context from the selected owned conversation, save user/assistant messages transactionally around successful responses, cap context by message/token policy, and avoid persisting failed upstream responses or sensitive request logs.
+
+### Phase 3: Normalize and harden AI workflows
+9. Replace five mode booleans and path-dependent behavior with one validated request contract containing `conversationId`, `mode`, `model`, `message`, attachments, and supported settings. Add a server-owned capability registry for configured deployments (`gpt-4o`, `o4-mini`, `o3` defaults) describing reasoning, vision, temperature support, compatible modes, and token controls. Reject unknown deployments and incompatible combinations; do not send `temperature` to reasoning models that do not support it.
+10. Consolidate chat routing into a service that safely builds upstream URLs, headers, and payloads; adds Axios/fetch timeouts and abort handling; normalizes network/upstream errors; redacts logs; and encodes path values such as filenames. Preserve the existing Incubator-compatible `/openai` and `/data/openai` behavior behind this service rather than exposing provider details to browser code.
+11. Add streamed assistant responses through an authenticated POST endpoint that proxies/parses upstream SSE, sends structured content/usage/citation/error events, supports browser cancellation with `AbortController`, and persists the final assistant message only after completion. Provide a controlled non-stream fallback if the configured upstream rejects streaming.
+12. Make each visible mode truthful and useful: Chat for normal text; Knowledge for authenticated RAG with visible citations/follow-ups; Vision for actual image attachments sent only to vision-capable models; Document Summary for validated upload plus ingestion-readiness polling rather than a fixed delay; Meeting Notes for audio/video transcription followed by a structured summary with decisions, action items, and open questions. Remove the unused retrieval selector unless the upstream request contract is verified to support it.
+13. Harden file/media handling with explicit MIME/extension/size limits, safe generated temporary names, asynchronous cleanup in `finally`, request cancellation/timeouts, normalized upstream errors, encoded deletion, and admin-only mutation. Never log prompts, transcripts, binary/base64 payloads, tokens, or complete upstream responses.
+14. Fix rendering safety by parsing Markdown first and sanitizing the generated HTML, pinning/bundling browser dependencies through npm rather than unversioned CDNs, and safely rendering citations and copy actions without inline handlers.
+
+### Phase 4: Rebuild the interface in the original visual language
+15. Restructure `public/index.html` into a compact black header with the supplied high-contrast logo and Chat Studio name, a collapsible configuration/knowledge rail, a dominant conversation workspace, and a conversation/details drawer. Preserve near-black, white, EY yellow, and restrained neutral grays; use the yellow accent for primary actions/status rather than Bootstrap defaults.
+16. Link and rewrite the maintained stylesheet using CSS variables and responsive grid constraints. Move inline styles into it, remove obsolete selectors, keep cards/panels compact with modest radii, and make configuration/details off-canvas on mobile so the chat remains usable at narrow widths.
+17. Replace the static fake history with the authenticated PostgreSQL-backed conversation list. Add semantic model/mode controls driven by the server capability registry, capability descriptions/chips based on actual behavior, admin-only knowledge management controls, attachment previews, explicit streaming/cancel/retry states, usage details, and empty/error/loading states.
+18. Refactor browser modules around a small authenticated API client and explicit UI state. Consolidate duplicate send/image handlers, use a textarea with Enter/Shift+Enter behavior, prevent duplicate submissions, scroll the actual chat viewport, reset file inputs, preserve follow-up labels, and remove dead suggestion/dark-mode/image code.
+19. Complete accessibility behavior: proper labels, semantic buttons for files/follow-ups, keyboard navigation, visible focus, accessible names/tooltips for icon controls, `aria-live` response/status regions, sufficient contrast, and stable touch targets. Ensure unauthenticated and unauthorized states explain the next action without permitting network calls.
+
+### Phase 5: Add test and developer stacks
+20. Add Vitest, jsdom, Supertest, and Nock unit tests. Cover capability/model validation, message construction, auth middleware and role gates, conversation ownership/context truncation, Markdown sanitization, mode UI behavior, upload validation/cleanup, URL encoding, timeouts/network failures, and error normalization.
+21. Add API integration tests using a real PostgreSQL container, a deterministic mock OIDC issuer/JWKS/token fixture, and mock Incubator endpoints. Verify unauthenticated denial, authenticated chat and persistence, cross-user isolation, `ChatStudio.Admin` upload/delete authorization, streaming/cancellation, RAG citations, vision payloads, transcription-to-meeting output, health/readiness, and upstream failure handling without contacting Entra or the real upstream.
+22. Add Playwright integration tests for public shell/sign-in messaging, test-login token flow, responsive desktop/mobile layout, model/mode capability changes, streamed chat, persisted conversation reload, role-gated knowledge controls, image/audio/document workflows, citation rendering, keyboard behavior, and no overlap at target viewports.
+23. Create dedicated Compose files: `compose.yaml` for the local app + PostgreSQL stack using runtime env injection and health-dependent startup; `compose.unit.yaml` for an isolated Node unit-test runner with no secrets or network dependencies; and `compose.integration.yaml` for app + PostgreSQL + mock OIDC + mock upstream + Playwright runner. Use named/ephemeral volumes deliberately and deterministic exit codes for CI.
+24. Add a `Makefile` with required `dev-up` and `dev-down` targets plus `dev-logs`, `test-unit`, `test-integration`, `test-all`, `lint`, and `check`. `dev-up` builds/starts the app and database; `dev-down` stops that stack without deleting `.env`, source uploads, or unrelated Docker state.
+25. Update `package.json`/lockfile scripts and README with prerequisites, Entra SPA/API registration steps (redirect URI, exposed API scope, `ChatStudio.Admin` app role and assignment), environment setup, local/Compose commands, test architecture, supported model capability configuration, security notes, and the upstream key-rotation warning.
+
+**Relevant files**
+- `/Users/fcabrera/Documents/Projects/chatbot-demo/package.json` and `package-lock.json` — rename package, pin Node support, bundle frontend/runtime dependencies, and add lint/test/migration scripts.
+- `/Users/fcabrera/Documents/Projects/chatbot-demo/server.js` and new `app.js` — separate startup from app construction; graceful shutdown and testable dependency injection.
+- New `/Users/fcabrera/Documents/Projects/chatbot-demo/server/config.js`, `auth.js`, `db.js`, `models.js`, `conversations.js`, and `ai.js` — configuration, Entra verification/roles, PostgreSQL access, capability registry, persistence, and upstream service boundaries.
+- `/Users/fcabrera/Documents/Projects/chatbot-demo/server/chat.js`, `upload.js`, `audio.js`, `get.js`, and `delete.js` — normalized routes, authorization, validated inputs, streaming, limits, and robust error handling.
+- New `/Users/fcabrera/Documents/Projects/chatbot-demo/migrations/` — PostgreSQL schema and indexes for users/conversations/messages.
+- `/Users/fcabrera/Documents/Projects/chatbot-demo/public/index.html` — branded responsive application shell and accessible controls.
+- `/Users/fcabrera/Documents/Projects/chatbot-demo/public/css/styles.css` — complete visual-system/responsive refresh preserving the source identity.
+- `/Users/fcabrera/Documents/Projects/chatbot-demo/public/js/main.js`, `chatFunctions.js`, `eventListeners.js`, `fileUpload.js`, `imageUpload.js`, and `utils.js` — authenticated API/state flow, real capabilities, persistence, attachments, accessibility, and dead-code cleanup.
+- `/Users/fcabrera/Documents/Projects/chatbot-demo/public/img/logo_light.png` and `logo_dark.png` — use existing supplied logo variants; no unnecessary redrawing.
+- `/Users/fcabrera/Documents/Projects/chatbot-demo/Dockerfile`, new `.dockerignore`, `.env.example`, `compose.yaml`, `compose.unit.yaml`, `compose.integration.yaml`, and `Makefile` — secure reproducible local/test workflows.
+- New `/Users/fcabrera/Documents/Projects/chatbot-demo/tests/unit/`, `tests/integration/`, `tests/e2e/`, and `tests/fixtures/` — unit, service integration, browser, mock JWKS/token, and upstream response coverage.
+- `/Users/fcabrera/Documents/Projects/chatbot-demo/README.md` — accurate Chat Studio setup, Entra, operations, models, tests, and security documentation.
+
+**Verification**
+1. Run `npm run lint`, `npm run test:unit`, and coverage; verify malformed requests, auth/roles, persistence isolation, capability rules, upload cleanup, and frontend rendering are covered.
+2. Run `docker compose -f compose.unit.yaml up --build --abort-on-container-exit --exit-code-from unit`; confirm no Entra/upstream credentials or external calls are required.
+3. Run `docker compose -f compose.integration.yaml up --build --abort-on-container-exit --exit-code-from integration`; confirm mocked auth/upstream flows and PostgreSQL migrations pass, then tear down with volumes.
+4. Run `make dev-up`, check `/health/live` and `/health/ready`, sign in through the configured Entra registration, exercise a standard user and a `ChatStudio.Admin`, then run `make dev-down` and verify graceful shutdown/data persistence.
+5. Use Playwright at desktop and mobile viewports to confirm the logo/assets render, the public shell performs zero protected calls, text never overlaps, panels switch correctly, keyboard/focus flows work, and streaming/cancel/attachments/citations remain usable.
+6. Inspect the built image and repository diff to confirm `.env`, uploaded documents, keys/tokens, logs, test private keys outside clearly marked fixtures, and provider-sensitive content are absent.
+
+**Decisions**
+- Product name: Chat Studio.
+- Keep the existing Express + vanilla JavaScript architecture; no SPA framework migration in this pass.
+- Entra topology: separate SPA and API registrations, with API bearer-token validation.
+- Anonymous visitors can view the UI only; all feature/API calls require authentication and the UI presents a sign-in-required notice.
+- Any authenticated user may use assistant features and own persistent conversations; the configurable `ChatStudio.Admin` app role gates shared document upload/delete.
+- PostgreSQL stores authenticated conversation history; anonymous history is not persisted.
+- Separate Compose files are required for development, unit tests, and integration tests.
+- Integration tests use mock OIDC/JWKS and mock Incubator endpoints; automated tests never call real Entra or consume real AI credentials.
+- Product branding is removed, but the Incubator-compatible endpoint/key environment contract remains because it is the actual upstream provider interface.
+- Uploaded user data under `uploads/` is not rewritten or committed; it is excluded from image contexts and treated as sensitive residual data.
+
+**Scope boundaries**
+- Included: Entra authentication/authorization, PostgreSQL conversation persistence, capability-driven models/modes, practical streaming/vision/RAG/document/meeting workflows, modern responsive UI, hardening, Docker/Make workflows, and unit/integration/browser tests.
+- Excluded: per-user upstream knowledge indexes unless the upstream API exposes namespace isolation; image generation, text-to-speech, arbitrary tool/function calling, enterprise telemetry, multi-tenant administration UI, and infrastructure-as-code for deploying Entra/PostgreSQL/cloud resources.
+- The existing local `.env` key must be rotated separately if it was ever shared, committed, cached in an image, or exposed; implementation will not print or migrate the secret.

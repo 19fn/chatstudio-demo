@@ -24,10 +24,12 @@ function repository() {
 
 describe('chat route', () => {
   it('rejects a model that is not enabled', async () => {
+    const logger = { debug: vi.fn() };
     const response = await request(createApp({
       config,
       conversationRepository: repository(),
       aiClient: { complete: vi.fn() },
+      logger,
     })).post('/api/chat').send({
       conversationId: 'ec8d60f4-47de-4b41-92a7-a15a22e44d4c',
       message: 'Describe this',
@@ -37,6 +39,9 @@ describe('chat route', () => {
 
     expect(response.status).toBe(400);
     expect(response.body.error).toBe('unsupported_model');
+    expect(logger.debug).toHaveBeenCalledWith('chat.request.rejected', {
+      path: '/api/chat', error: 'unsupported_model',
+    });
   });
 
   it('sends a valid multimodal request and persists the exchange', async () => {
@@ -79,7 +84,7 @@ describe('chat route', () => {
       .post('/api/chat/stream')
       .send({
         conversationId: 'ec8d60f4-47de-4b41-92a7-a15a22e44d4c',
-        message: 'Hello', model: 'gpt-5.4-mini', mode: 'chat',
+        message: 'Hello', model: 'gpt-5.4-mini', mode: 'chat', image: null,
       });
 
     expect(response.status).toBe(200);

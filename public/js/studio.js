@@ -1,5 +1,6 @@
 import { marked } from '/vendor/marked/marked.esm.js';
 import DOMPurify from '/vendor/dompurify/purify.es.mjs';
+import { reconcileConversationSelection } from './conversation-selection.js';
 
 const state = {
   authConfig: null,
@@ -80,7 +81,7 @@ async function apiFetch(url, options = {}) {
   const response = await fetch(url, { ...options, headers });
   if (!response.ok) {
     const body = await response.json().catch(() => ({}));
-    throw new Error(body.error || `Request failed (${response.status})`);
+    throw new Error(errorMessage(body, response.status));
   }
   return response.status === 204 ? null : response.json();
 }
@@ -91,6 +92,16 @@ function currentMode() {
 
 function currentModel() {
   return state.models.find((model) => model.id === elements['model-select'].value);
+}
+
+function errorMessage(body, status) {
+  const messages = {
+    invalid_request: 'Chat request is invalid. Check the message and settings, then try again.',
+    unsupported_model: 'This conversation used a model that is no longer available. Select an enabled model and try again.',
+    unsupported_model_mode: 'The selected model does not support this mode. Choose a compatible mode and try again.',
+    image_required: 'Attach an image before sending a Vision request.',
+  };
+  return messages[body.error] || body.error || `Request failed (${status})`;
 }
 
 function updateCapabilities() {
@@ -162,7 +173,7 @@ async function streamChat(payload, onEvent, signal) {
   const response = await fetch('/api/chat/stream', { method: 'POST', headers, body: JSON.stringify(payload), signal });
   if (!response.ok) {
     const body = await response.json().catch(() => ({}));
-    throw new Error(body.error || `Request failed (${response.status})`);
+    throw new Error(errorMessage(body, response.status));
   }
   const reader = response.body.getReader();
   const decoder = new TextDecoder();
@@ -230,10 +241,16 @@ async function createConversation() {
 
 async function openConversation(id) {
   const conversation = await apiFetch(`/api/conversations/${id}`);
+  const selection = reconcileConversationSelection({
+    modelId: conversation.model,
+    mode: conversation.mode,
+    models: state.models,
+    defaultModel: state.defaultModel,
+  });
   state.conversationId = id;
   elements['conversation-title'].textContent = conversation.title;
-  elements['model-select'].value = conversation.model;
-  const mode = document.querySelector(`input[name="mode"][value="${conversation.mode}"]`);
+  elements['model-select'].value = selection.modelId;
+  const mode = document.querySelector(`input[name="mode"][value="${selection.mode}"]`);
   if (mode) mode.checked = true;
   elements['chat-messages'].replaceChildren();
   conversation.messages.forEach((message) => renderMessage(message.role, message.content, message.metadata));

@@ -87,6 +87,14 @@ function createApp(options = {}) {
   app.use('/vendor/dompurify', express.static(path.join(__dirname, 'node_modules', 'dompurify', 'dist')));
   app.use(express.static(path.join(__dirname, 'public')));
   app.use(auth.requireAuth);
+  app.get('/api/profile', (request, response) => {
+    response.json({
+      displayName: request.user.displayName,
+      tenantId: request.user.tenantId,
+      objectId: request.user.objectId,
+      roles: request.user.roles,
+    });
+  });
   if (conversationRepository) {
     app.use('/api/conversations', createConversationRouter(conversationRepository));
     app.use(createChatRouter({ aiClient, conversationRepository, getModel: models.getModel, logger }));

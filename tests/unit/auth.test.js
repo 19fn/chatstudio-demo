@@ -45,6 +45,22 @@ describe('authentication', () => {
     expect(verifyToken).toHaveBeenCalledWith('valid-token');
   });
 
+  it('returns the server-verified profile metadata', async () => {
+    const auth = createAuth(config.auth, {
+      verifyToken: vi.fn().mockResolvedValue({
+        tid: 'tenant', oid: 'user', name: 'Test User', scp: 'access_as_user', roles: ['ChatStudio.Admin'],
+      }),
+    });
+    const response = await request(createApp({ config, auth, conversationRepository: { list: vi.fn() } }))
+      .get('/api/profile')
+      .set('Authorization', 'Bearer valid-token');
+
+    expect(response.status).toBe(200);
+    expect(response.body).toEqual({
+      displayName: 'Test User', tenantId: 'tenant', objectId: 'user', roles: ['ChatStudio.Admin'],
+    });
+  });
+
   it('logs only a safe verifier error code when rejecting a token', async () => {
     const logger = { warn: vi.fn() };
     const verificationError = Object.assign(new Error('sensitive verifier details'), {

@@ -19,10 +19,15 @@
       </a>
       <div class="account-actions">
         <span id="account-name" class="account-name">Guest</span>
-        <button class="icon-button hidden" id="profile-toggle" type="button" aria-label="Open profile" title="Open profile">◉</button>
-        <button class="icon-button hidden" id="provider-settings-toggle" type="button" aria-label="Open provider settings" title="Open provider settings">⚙</button>
         <button class="button button-secondary" id="sign-in-button" type="button">Sign in</button>
-        <button class="button button-secondary hidden" id="sign-out-button" type="button">Sign out</button>
+        <div class="account-menu hidden" id="account-menu">
+          <button class="icon-button" id="account-menu-toggle" type="button" aria-label="Open account menu" aria-expanded="false" aria-controls="account-menu-items" title="Account menu">●</button>
+          <div class="account-menu-items hidden" id="account-menu-items" role="menu" aria-label="Account actions">
+            <button id="profile-toggle" type="button" role="menuitem">Profile details</button>
+            <button id="provider-settings-toggle" type="button" role="menuitem">Provider settings</button>
+            <button id="sign-out-button" type="button" role="menuitem">Sign out</button>
+          </div>
+        </div>
       </div>
     </header>
 

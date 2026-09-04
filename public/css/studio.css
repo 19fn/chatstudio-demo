@@ -50,6 +50,11 @@ button:disabled, select:disabled, textarea:disabled, input:disabled { cursor: no
 .brand-logo { display: block; width: 92px; height: 58px; object-fit: contain; }
 .account-actions { display: flex; align-items: center; gap: 12px; }
 .account-name { color: var(--muted); font-size: 14px; }
+.account-menu { position: relative; }
+.account-menu-items { position: absolute; top: calc(100% + 8px); right: 0; z-index: 13; display: grid; width: 190px; padding: 6px; border: 1px solid var(--line); border-radius: 6px; background: var(--surface); box-shadow: var(--shadow); }
+.account-menu-items button { min-height: 38px; border: 0; border-radius: 4px; background: transparent; color: var(--ink); padding: 0 10px; text-align: left; font-weight: 700; }
+.account-menu-items button:hover, .account-menu-items button:focus-visible { background: var(--accent-soft); }
+.account-menu-items button:last-child { margin-top: 4px; border-top: 1px solid var(--line); color: var(--danger); }
 .app-header .icon-button { border-color: #c7d6ed; background: var(--surface-subtle); color: var(--ink); }
 .app-header .button-secondary { border-color: var(--accent); background: var(--accent); color: white; }
 .app-header .button-secondary:hover { border-color: var(--accent-strong); background: var(--accent-strong); }

@@ -44,7 +44,10 @@
         <nav id="conversation-list" class="conversation-list" aria-label="Saved conversations">
           <p class="empty-copy">Sign in to view your conversations.</p>
         </nav>
-        <div class="sidebar-footer"><button class="text-button" id="knowledge-toggle" type="button" disabled>Knowledge base</button></div>
+        <div class="sidebar-footer">
+          <p class="workspace-usage" id="workspace-usage" role="status">Session usage: 0 tokens</p>
+          <button class="text-button" id="knowledge-toggle" type="button" disabled>Knowledge base</button>
+        </div>
       </aside>
 
       <section class="chat-panel" aria-label="Chat workspace">
@@ -106,7 +109,6 @@
           </div>
         </details>
         <div class="model-note" id="model-note"></div>
-        <div class="usage" aria-live="polite"><span>Session usage</span><strong id="token-usage">0 tokens</strong></div>
       </aside>
 
       <dialog id="knowledge-dialog">

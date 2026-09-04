@@ -123,7 +123,8 @@ function createChatRouter({ resolveRuntime, conversationRepository, logger }) {
         onEvent: send,
       });
       await conversationRepository.appendExchange(
-        request.user, input.conversationId, input.message, result.message, { citations: result.citations },
+        request.user, input.conversationId, input.message, result.message,
+        { citations: result.citations, tokens: result.tokens },
       );
       send({ type: 'done', citations: result.citations, followUpQuestions: result.followUpQuestions });
       response.end();

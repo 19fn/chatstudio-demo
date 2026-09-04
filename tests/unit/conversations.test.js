@@ -54,4 +54,14 @@ describe('conversation routes', () => {
     expect(repository.rename).toHaveBeenCalledWith(expect.any(Object), 'owned', 'Renamed');
     expect(repository.clear).toHaveBeenCalledWith(expect.any(Object), 'owned');
   });
+
+  it('returns usage scoped to the current user', async () => {
+    const repository = { usage: vi.fn().mockResolvedValue({ totalTokens: 4321 }) };
+    const response = await request(createApp({ config, conversationRepository: repository }))
+      .get('/api/conversations/usage');
+
+    expect(response.status).toBe(200);
+    expect(response.body).toEqual({ totalTokens: 4321 });
+    expect(repository.usage).toHaveBeenCalledWith(expect.objectContaining({ objectId: 'local-user' }));
+  });
 });

@@ -16,7 +16,7 @@ const state = {
 };
 
 const elements = Object.fromEntries([
-  'auth-banner', 'sign-in-button', 'sign-out-button', 'profile-toggle', 'account-name', 'new-conversation',
+  'auth-banner', 'sign-in-button', 'sign-out-button', 'profile-toggle', 'provider-settings-toggle', 'account-name', 'new-conversation',
   'conversation-list', 'conversation-title', 'model-select', 'mode-picker', 'mode-label',
   'rename-conversation', 'clear-conversation', 'delete-conversation',
   'system-message', 'max-tokens', 'max-tokens-value', 'temperature', 'temperature-value',
@@ -26,6 +26,8 @@ const elements = Object.fromEntries([
   'navigation-toggle', 'navigation-panel', 'knowledge-toggle', 'knowledge-dialog',
   'knowledge-close', 'knowledge-role-note', 'upload-button', 'refresh-files', 'file-list', 'toast',
   'profile-dialog', 'profile-close', 'profile-details',
+  'provider-settings-dialog', 'provider-settings-close', 'provider-settings-form', 'provider-select',
+  'provider-endpoint', 'provider-deployment', 'provider-api-key',
 ].map((id) => [id, document.getElementById(id)]));
 
 const prompts = [
@@ -62,6 +64,15 @@ function renderProfile(verifiedProfile) {
   }));
 }
 
+async function openProviderSettings() {
+  const { settings } = await apiFetch('/api/provider-settings');
+  elements['provider-select'].value = settings?.provider || 'azure-openai';
+  elements['provider-endpoint'].value = settings?.endpoint || '';
+  elements['provider-deployment'].value = settings?.deploymentName || '';
+  elements['provider-api-key'].value = '';
+  elements['provider-settings-dialog'].showModal();
+}
+
 function setAuthenticated(account, token) {
   state.account = account;
   state.accessToken = token;
@@ -70,6 +81,11 @@ function setAuthenticated(account, token) {
   elements['sign-in-button'].classList.toggle('hidden', authenticated);
   elements['sign-out-button'].classList.toggle('hidden', !authenticated);
   elements['profile-toggle'].classList.toggle('hidden', !authenticated);
+  elements['provider-settings-toggle'].classList.toggle('hidden', !authenticated);
+  elements['provider-settings-toggle'].disabled = !state.authConfig?.providerSettingsEnabled;
+  elements['provider-settings-toggle'].title = state.authConfig?.providerSettingsEnabled
+    ? 'Open provider settings'
+    : 'Provider settings require PROVIDER_SETTINGS_ENCRYPTION_KEY';
   elements['account-name'].textContent = account?.name || (authenticated ? 'Local Developer' : 'Guest');
   elements['chat-input'].disabled = !authenticated;
   elements['chat-input'].placeholder = authenticated ? 'Message Chat Studio' : 'Sign in to start a conversation';
@@ -382,8 +398,8 @@ async function loadFiles() {
 
 async function initializeAuth() {
   const response = await fetch('/api/config');
-  const { auth, logLevel } = await response.json();
-  state.authConfig = { ...auth, logLevel };
+  const { auth, logLevel, providerSettingsEnabled } = await response.json();
+  state.authConfig = { ...auth, logLevel, providerSettingsEnabled };
   if (auth.disabled) {
     setAuthenticated({ name: 'Local Developer', idTokenClaims: { roles: [auth.adminRole] } }, null);
     await loadConversations();
@@ -498,6 +514,29 @@ function bindEvents() {
     elements['profile-dialog'].showModal();
   });
   elements['profile-close'].addEventListener('click', () => elements['profile-dialog'].close());
+  elements['provider-settings-toggle'].addEventListener('click', () => openProviderSettings().catch((error) => showToast(error.message)));
+  elements['provider-settings-close'].addEventListener('click', () => elements['provider-settings-dialog'].close());
+  elements['provider-settings-form'].addEventListener('submit', async (event) => {
+    event.preventDefault();
+    try {
+      const settings = await apiFetch('/api/provider-settings', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          provider: elements['provider-select'].value,
+          endpoint: elements['provider-endpoint'].value,
+          deploymentName: elements['provider-deployment'].value,
+          apiKey: elements['provider-api-key'].value,
+        }),
+      });
+      elements['provider-endpoint'].value = settings.settings.endpoint;
+      elements['provider-deployment'].value = settings.settings.deploymentName;
+      elements['provider-api-key'].value = '';
+      showToast('Provider settings saved.');
+    } catch (error) {
+      showToast(error.message);
+    }
+  });
   elements['refresh-files'].addEventListener('click', () => loadFiles().catch((error) => showToast(error.message)));
   elements['upload-button'].addEventListener('click', () => elements['file-input'].click());
   elements['sign-in-button'].addEventListener('click', async () => {

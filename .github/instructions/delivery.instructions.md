@@ -34,6 +34,9 @@ When copying this file to another repository, update every value in this section
 
 ## Pull Requests
 - Push the issue branch to the configured push remote and open the pull request against the configured default base.
+- Before creating a pull request, search open and closed pull requests by ticket identifier, linked issue, and head branch.
+- Use one pull request per ticket or issue. Reuse and update an existing PR; do not create another unless the user explicitly requests a separate PR after reviewing the existing PR.
+- If the existing PR is closed or merged but additional work is required, stop and ask the user whether to reopen, follow up, or create a separate PR.
 - Format every PR title as `<project-short-name>-<ticket-number> - <imperative user-visible result>`.
 - Use the project short name from Repository Identity.
 - Preserve the ticket's imperative issue title when it accurately describes the delivered result; otherwise write a concise imperative phrase that does.

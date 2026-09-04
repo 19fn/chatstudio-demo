@@ -86,6 +86,20 @@ function createConversationRepository(database) {
       }
     },
 
+    async usage(user) {
+      const userId = await ensureUser(user);
+      const result = await database.query(
+        `SELECT COALESCE(SUM((messages.metadata -> 'tokens' ->> 'total_tokens')::BIGINT), 0) AS "totalTokens"
+         FROM messages
+         JOIN conversations ON conversations.id = messages.conversation_id
+         WHERE conversations.user_id = $1
+           AND messages.role = 'assistant'
+           AND messages.metadata -> 'tokens' ->> 'total_tokens' ~ '^[0-9]+$'`,
+        [userId],
+      );
+      return { totalTokens: Number(result.rows[0].totalTokens) };
+    },
+
     async remove(user, id) {
       const userId = await ensureUser(user);
       const result = await database.query(
@@ -136,6 +150,14 @@ function createConversationRouter(repository) {
     if (!parsed.success) return response.status(400).json({ error: 'invalid_request' });
     try {
       return response.status(201).json(await repository.create(request.user, parsed.data));
+    } catch (error) {
+      return next(error);
+    }
+  });
+
+  router.get('/usage', async (request, response, next) => {
+    try {
+      return response.json(await repository.usage(request.user));
     } catch (error) {
       return next(error);
     }

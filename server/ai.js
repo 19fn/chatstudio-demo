@@ -34,7 +34,12 @@ function createAiClient(config, httpClient = axios) {
   async function stream({ model, mode, messages, maxTokens, temperature, signal, onEvent }) {
     const route = ['knowledge', 'document'].includes(mode) ? 'data/openai' : 'openai';
     const url = `${baseUrl}/${route}/deployments/${encodeURIComponent(model.deployment)}/chat/completions`;
-    const payload = { messages, max_completion_tokens: maxTokens, stream: true };
+    const payload = {
+      messages,
+      max_completion_tokens: maxTokens,
+      stream: true,
+      stream_options: { include_usage: true },
+    };
     if (model.temperature) payload.temperature = temperature;
 
     const response = await httpClient.post(url, payload, {
@@ -48,6 +53,7 @@ function createAiClient(config, httpClient = axios) {
     let buffer = '';
     let content = '';
     let metadata = {};
+    let tokens = null;
     for await (const chunk of response.data) {
       buffer += chunk.toString('utf8');
       const lines = buffer.split('\n');
@@ -66,13 +72,17 @@ function createAiClient(config, httpClient = axios) {
         if (choice.message?.context || choice.delta?.context) {
           metadata = choice.message?.context || choice.delta?.context;
         }
-        if (event.usage) onEvent({ type: 'usage', usage: event.usage });
+        if (event.usage) {
+          tokens = event.usage;
+          onEvent({ type: 'usage', usage: event.usage });
+        }
       }
     }
     return {
       message: content,
       citations: metadata.citations || [],
       followUpQuestions: metadata.intent || [],
+      tokens,
     };
   }
 

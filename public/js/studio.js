@@ -22,7 +22,7 @@ const elements = Object.fromEntries([
   'system-message', 'max-tokens', 'max-tokens-value', 'temperature', 'temperature-value',
   'temperature-control', 'model-note', 'message-viewport', 'welcome-state', 'prompt-grid',
   'chat-messages', 'chat-form', 'chat-input', 'send-button', 'attachment-button', 'file-input',
-  'attachment-preview', 'token-usage', 'details-toggle', 'details-close', 'details-panel',
+  'attachment-preview', 'workspace-usage', 'details-toggle', 'details-close', 'details-panel',
   'navigation-toggle', 'navigation-panel', 'knowledge-toggle', 'knowledge-dialog',
   'knowledge-close', 'knowledge-role-note', 'upload-button', 'refresh-files', 'file-list', 'toast',
   'profile-dialog', 'profile-close', 'profile-details',
@@ -57,6 +57,12 @@ function showToast(message) {
 function closeAccountMenu() {
   elements['account-menu-items'].classList.add('hidden');
   elements['account-menu-toggle'].setAttribute('aria-expanded', 'false');
+}
+
+async function loadUsage() {
+  if (!state.account) return;
+  const usage = await apiFetch('/api/conversations/usage');
+  elements['workspace-usage'].textContent = `Session usage: ${usage.totalTokens} tokens`;
 }
 
 function renderProfile(verifiedProfile) {
@@ -106,6 +112,7 @@ function setAuthenticated(account, token) {
   elements['delete-conversation'].disabled = !authenticated || !state.conversationId;
   updateComposer();
   updateCapabilities();
+  if (authenticated) loadUsage().catch(() => {});
 }
 
 async function apiFetch(url, options = {}) {
@@ -324,9 +331,6 @@ async function sendMessage(event) {
         assistantText += streamEvent.content;
         assistant.body.innerHTML = DOMPurify.sanitize(marked.parse(assistantText));
       }
-      if (streamEvent.type === 'usage' && streamEvent.usage?.total_tokens) {
-        elements['token-usage'].textContent = `${streamEvent.usage.total_tokens} tokens`;
-      }
       if (streamEvent.type === 'done' && streamEvent.citations?.length) {
         const citations = document.createElement('div');
         citations.className = 'citations';
@@ -339,6 +343,7 @@ async function sendMessage(event) {
     state.image = null;
     elements['attachment-preview'].classList.add('hidden');
     await loadConversations();
+    await loadUsage();
   } catch (error) {
     if (error.name === 'AbortError') {
       assistant.item.remove();

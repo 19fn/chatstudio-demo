@@ -1,4 +1,5 @@
 import { describe, expect, it, vi } from 'vitest';
+import { Readable } from 'node:stream';
 
 import aiModule from '../../server/ai.js';
 import modelsModule from '../../server/models.js';
@@ -44,5 +45,25 @@ describe('AI client', () => {
     expect(httpClient.post.mock.calls[0][0]).toContain('/data/openai/');
     expect(result.message).toBe('Answer [doc1]');
     expect(result.citations).toEqual([{ title: 'Guide' }]);
+  });
+
+  it('returns usage emitted by a streaming completion', async () => {
+    const httpClient = {
+      post: vi.fn().mockResolvedValue({
+        data: Readable.from(['data: {"choices":[{"delta":{"content":"Done"}}]}\n\ndata: {"usage":{"total_tokens":12}}\n\n']),
+      }),
+    };
+    const client = createAiClient({ endpoint: 'https://ai.test', key: 'key', timeoutMs: 500 }, httpClient);
+
+    const result = await client.stream({
+      model: models.getModel('gpt-5.4-mini'), mode: 'chat', messages: [], maxTokens: 1000, temperature: 0.2,
+      onEvent: vi.fn(),
+    });
+
+    expect(result).toMatchObject({ message: 'Done', tokens: { total_tokens: 12 } });
+    expect(httpClient.post.mock.calls[0][1]).toMatchObject({
+      stream: true,
+      stream_options: { include_usage: true },
+    });
   });
 });

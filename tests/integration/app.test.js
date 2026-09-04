@@ -44,6 +44,10 @@ describe('Chat Studio container', () => {
     const stored = await fetch(`${baseUrl}/api/conversations/${conversation.id}`);
     expect(stored.status).toBe(200);
     expect((await stored.json()).messages).toHaveLength(2);
+
+    const usage = await fetch(`${baseUrl}/api/conversations/usage`);
+    expect(usage.status).toBe(200);
+    expect(await usage.json()).toEqual({ totalTokens: 9 });
   });
 
   it('persists encrypted provider settings without returning the API key', async () => {

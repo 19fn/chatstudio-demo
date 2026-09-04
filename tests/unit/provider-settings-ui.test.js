@@ -30,6 +30,8 @@ describe('provider settings UI', () => {
     expect(accountMenu?.querySelector('#profile-toggle')?.textContent).toBe('Profile details');
     expect(accountMenu?.querySelector('#provider-settings-toggle')?.textContent).toBe('Provider settings');
     expect(accountMenu?.querySelector('#sign-out-button')?.textContent).toBe('Sign out');
+    expect(document.querySelector('#workspace-usage')?.textContent).toBe('Session usage: 0 tokens');
+    expect(document.querySelector('#details-panel #token-usage')).toBeNull();
   });
 
   it('uses the logo as the account menu trigger', () => {

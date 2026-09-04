@@ -104,7 +104,7 @@ describe('chat route', () => {
     const providerSettingsRepository = {
       get: vi.fn(), save: vi.fn(),
       getRuntime: vi.fn().mockResolvedValue({
-        endpoint: 'https://saved.example.test', apiKey: 'saved-key', deploymentName: 'saved-deployment', modelId: 'gpt-5.4-mini',
+        endpoint: 'https://saved.example.test', apiKey: 'saved-key', deploymentName: 'saved-deployment', modelId: 'gpt-5.4-mini', apiVersion: '2024-10-21',
       }),
     };
     const response = await request(createApp({
@@ -116,7 +116,7 @@ describe('chat route', () => {
 
     expect(response.status).toBe(200);
     expect(aiClientFactory).toHaveBeenCalledWith(expect.objectContaining({
-      endpoint: 'https://saved.example.test', key: 'saved-key', apiVersion: '2025-04-01-preview', timeoutMs: 1000,
+      endpoint: 'https://saved.example.test', key: 'saved-key', apiVersion: '2024-10-21', timeoutMs: 1000,
     }));
     expect(savedClient.complete).toHaveBeenCalledOnce();
     expect(environmentClient.complete).not.toHaveBeenCalled();

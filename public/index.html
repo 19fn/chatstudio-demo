@@ -144,6 +144,11 @@
           <input id="provider-endpoint" name="endpoint" type="url" placeholder="https://your-resource.openai.azure.com" required>
           <label for="provider-deployment">Deployment name</label>
           <input id="provider-deployment" name="deploymentName" type="text" required>
+          <label for="provider-model">Model</label>
+          <select id="provider-model" name="modelId">
+            <option value="gpt-5.4-mini">GPT-5.4 mini</option>
+            <option value="gpt-5.4">GPT-5.4</option>
+          </select>
           <label for="provider-api-key">API key</label>
           <input id="provider-api-key" name="apiKey" type="password" autocomplete="new-password" required>
           <p class="provider-settings-note">Saved keys are encrypted and are never shown again.</p>

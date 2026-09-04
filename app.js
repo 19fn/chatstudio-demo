@@ -23,12 +23,37 @@ function createApp(options = {}) {
   const logger = options.logger || createLogger(config.logLevel);
   const models = options.models || createModelRegistry(config.ai.modelDeployments, config.ai.defaultModel);
   const auth = options.auth || createAuth(config.auth, { logger });
-  const aiClient = options.aiClient || createAiClient(config.ai);
+  const aiClientFactory = options.aiClientFactory || createAiClient;
+  const aiClient = options.aiClient || aiClientFactory(config.ai);
   const conversationRepository = options.conversationRepository
     || (options.database ? createConversationRepository(options.database) : null);
   const providerSettingsRepository = options.providerSettingsRepository
     || (options.database && config.providerSettingsEncryptionKey
       ? createProviderSettingsRepository(options.database, config.providerSettingsEncryptionKey) : null);
+  const hasEnvironmentRuntime = Boolean(config.ai.endpoint && config.ai.key);
+
+  async function resolveRuntime(user) {
+    const savedSettings = providerSettingsRepository?.getRuntime
+      ? await providerSettingsRepository.getRuntime(user)
+      : null;
+    if (savedSettings) {
+      return {
+        aiClient: aiClientFactory({
+          endpoint: savedSettings.endpoint,
+          key: savedSettings.apiKey,
+          apiVersion: config.ai.apiVersion,
+          timeoutMs: config.ai.timeoutMs,
+        }),
+        getModel: createModelRegistry({ [savedSettings.modelId]: savedSettings.deploymentName }, savedSettings.modelId).getModel,
+      };
+    }
+    if (!hasEnvironmentRuntime) {
+      const error = new Error('Provider configuration is required before starting a chat.');
+      error.code = 'runtime_configuration_required';
+      throw error;
+    }
+    return { aiClient, getModel: models.getModel };
+  }
 
   app.use(helmet({
     crossOriginOpenerPolicy: { policy: 'same-origin-allow-popups' },
@@ -103,7 +128,7 @@ function createApp(options = {}) {
   if (providerSettingsRepository) app.use('/api/provider-settings', createProviderSettingsRouter(providerSettingsRepository));
   if (conversationRepository) {
     app.use('/api/conversations', createConversationRouter(conversationRepository));
-    app.use(createChatRouter({ aiClient, conversationRepository, getModel: models.getModel, logger }));
+    app.use(createChatRouter({ resolveRuntime, conversationRepository, logger }));
   }
   app.use('/upload', auth.requireRole(config.auth.adminRole));
   app.use('/deletefile', auth.requireRole(config.auth.adminRole));
@@ -114,6 +139,9 @@ function createApp(options = {}) {
 
   app.use((error, _request, response, _next) => {
     logger.error('http.request.failed', { error: error.message });
+    if (error.code === 'runtime_configuration_required') {
+      return response.status(503).json({ error: error.code });
+    }
     response.status(500).json({ error: 'internal_error' });
   });
 

@@ -9,7 +9,7 @@ const chatInput = z.object({
   systemMessage: z.string().trim().max(4000).default('You are a helpful AI assistant.'),
   maxTokens: z.coerce.number().int().min(1).max(16000).default(1200),
   temperature: z.coerce.number().min(0).max(1).default(0.4),
-  image: z.string().regex(/^data:image\/(png|jpeg|webp);base64,/).optional(),
+  image: z.string().regex(/^data:image\/(png|jpeg|webp);base64,/).nullish().transform((image) => image || undefined),
 });
 
 function buildMessages(input, history) {
@@ -27,28 +27,33 @@ function buildMessages(input, history) {
   ];
 }
 
-function createChatRouter({ aiClient, conversationRepository, getModel }) {
+function createChatRouter({ aiClient, conversationRepository, getModel, logger }) {
   const router = express.Router();
+
+  function rejectValidation(request, response, error, details) {
+    logger?.debug('chat.request.rejected', { path: request.path, error });
+    return response.status(400).json(details ? { error, details } : { error });
+  }
 
   async function prepareChat(request, response) {
     const legacyMode = request.path === '/rag-chat' ? 'knowledge' : 'chat';
     const parsed = chatInput.safeParse({ ...request.body, mode: request.body.mode || legacyMode });
     if (!parsed.success) {
-      response.status(400).json({ error: 'invalid_request', details: parsed.error.flatten() });
+      rejectValidation(request, response, 'invalid_request', parsed.error.flatten());
       return null;
     }
     const input = parsed.data;
     const model = getModel(input.model);
     if (!model) {
-      response.status(400).json({ error: 'unsupported_model' });
+      rejectValidation(request, response, 'unsupported_model');
       return null;
     }
     if (!model.modes.includes(input.mode)) {
-      response.status(400).json({ error: 'unsupported_model_mode' });
+      rejectValidation(request, response, 'unsupported_model_mode');
       return null;
     }
     if (input.mode === 'vision' && !input.image) {
-      response.status(400).json({ error: 'image_required' });
+      rejectValidation(request, response, 'image_required');
       return null;
     }
     const conversation = await conversationRepository.get(request.user, input.conversationId);

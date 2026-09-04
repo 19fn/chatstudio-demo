@@ -33,6 +33,7 @@ const environmentSchema = z.object({
   AI_API_VERSION: z.string().min(1).default('2025-04-01-preview'),
   AI_MODEL_DEPLOYMENTS: modelDeployments,
   AI_DEFAULT_MODEL: z.string().min(1).default('gpt-5.4-mini'),
+  PROVIDER_SETTINGS_ENCRYPTION_KEY: optionalString,
   DATABASE_URL: optionalString,
   ENTRA_TENANT_ID: optionalString,
   ENTRA_API_CLIENT_ID: optionalString,
@@ -64,6 +65,7 @@ function loadConfig(environment = process.env) {
       timeoutMs: values.UPSTREAM_TIMEOUT_MS,
     },
     databaseUrl: values.DATABASE_URL,
+    providerSettingsEncryptionKey: values.PROVIDER_SETTINGS_ENCRYPTION_KEY,
     auth: {
       disabled: values.AUTH_DISABLED,
       tenantId: values.ENTRA_TENANT_ID,

@@ -15,6 +15,7 @@ const { createConversationRepository, createConversationRouter } = require('./se
 const { databaseReady } = require('./server/db');
 const { createLogger, requestLogger } = require('./server/logger');
 const { createModelRegistry } = require('./server/models');
+const { createProviderSettingsRepository, createProviderSettingsRouter } = require('./server/provider-settings');
 
 function createApp(options = {}) {
   const app = express();
@@ -25,6 +26,9 @@ function createApp(options = {}) {
   const aiClient = options.aiClient || createAiClient(config.ai);
   const conversationRepository = options.conversationRepository
     || (options.database ? createConversationRepository(options.database) : null);
+  const providerSettingsRepository = options.providerSettingsRepository
+    || (options.database && config.providerSettingsEncryptionKey
+      ? createProviderSettingsRepository(options.database, config.providerSettingsEncryptionKey) : null);
 
   app.use(helmet({
     crossOriginOpenerPolicy: { policy: 'same-origin-allow-popups' },
@@ -59,6 +63,7 @@ function createApp(options = {}) {
   app.get('/api/config', (_request, response) => {
     response.json({
       logLevel: config.logLevel,
+      providerSettingsEnabled: Boolean(config.providerSettingsEncryptionKey),
       auth: {
         tenantId: config.auth.tenantId || null,
         clientId: config.auth.spaClientId || null,
@@ -95,6 +100,7 @@ function createApp(options = {}) {
       roles: request.user.roles,
     });
   });
+  if (providerSettingsRepository) app.use('/api/provider-settings', createProviderSettingsRouter(providerSettingsRepository));
   if (conversationRepository) {
     app.use('/api/conversations', createConversationRouter(conversationRepository));
     app.use(createChatRouter({ aiClient, conversationRepository, getModel: models.getModel, logger }));

@@ -104,14 +104,15 @@ describe('chat route', () => {
     const providerSettingsRepository = {
       get: vi.fn(), save: vi.fn(),
       getRuntime: vi.fn().mockResolvedValue({
-        endpoint: 'https://saved.example.test', apiKey: 'saved-key', deploymentName: 'saved-deployment', modelId: 'gpt-5.4-mini', apiVersion: '2024-10-21',
+        endpoint: 'https://saved.example.test', apiKey: 'saved-key', apiVersion: '2024-10-21', activeModelId: 'deployed-gpt',
+        models: [{ id: 'deployed-gpt', deployment: 'saved-deployment', modes: ['chat'], temperature: false }],
       }),
     };
     const response = await request(createApp({
       config, conversationRepository: conversations, aiClient: environmentClient, providerSettingsRepository,
       aiClientFactory,
     })).post('/api/chat').send({
-      conversationId: 'ec8d60f4-47de-4b41-92a7-a15a22e44d4c', message: 'Hello', model: 'gpt-5.4-mini', mode: 'chat',
+      conversationId: 'ec8d60f4-47de-4b41-92a7-a15a22e44d4c', message: 'Hello', model: 'deployed-gpt', mode: 'chat',
     });
 
     expect(response.status).toBe(200);
@@ -119,6 +120,9 @@ describe('chat route', () => {
       endpoint: 'https://saved.example.test', key: 'saved-key', apiVersion: '2024-10-21', timeoutMs: 1000,
     }));
     expect(savedClient.complete).toHaveBeenCalledOnce();
+    expect(savedClient.complete).toHaveBeenCalledWith(expect.objectContaining({
+      model: expect.objectContaining({ id: 'deployed-gpt', deployment: 'saved-deployment' }),
+    }));
     expect(environmentClient.complete).not.toHaveBeenCalled();
   });
 
@@ -143,6 +147,22 @@ describe('chat route', () => {
     })).post('/api/chat').send({
       conversationId: 'ec8d60f4-47de-4b41-92a7-a15a22e44d4c', message: 'Hello', model: 'gpt-5.4-mini', mode: 'chat',
     });
+
+    expect(response.status).toBe(503);
+    expect(response.body).toEqual({ error: 'runtime_configuration_required' });
+  });
+
+  it('requires an active saved provider model before starting a chat', async () => {
+    const providerSettingsRepository = {
+      get: vi.fn(), save: vi.fn(),
+      getRuntime: vi.fn().mockResolvedValue({
+        endpoint: 'https://saved.example.test', apiKey: 'saved-key', apiVersion: '2024-10-21', activeModelId: null, models: [],
+      }),
+    };
+    const response = await request(createApp({ config, conversationRepository: repository(), providerSettingsRepository }))
+      .post('/api/chat').send({
+        conversationId: 'ec8d60f4-47de-4b41-92a7-a15a22e44d4c', message: 'Hello', model: 'my-gpt', mode: 'chat',
+      });
 
     expect(response.status).toBe(503);
     expect(response.body).toEqual({ error: 'runtime_configuration_required' });

@@ -17,8 +17,13 @@ describe('provider settings UI', () => {
     expect(document.querySelector('#provider-endpoint')?.getAttribute('type')).toBe('url');
     expect(document.querySelector('#provider-api-key')?.getAttribute('type')).toBe('password');
     expect(document.querySelector('#provider-deployment')).not.toBeNull();
-    expect(document.querySelector('#provider-model')?.value).toBe('gpt-5.4-mini');
     expect(document.querySelector('#provider-api-version')?.value).toBe('2025-04-01-preview');
+    expect(document.querySelector('#provider-basic-tab')?.getAttribute('role')).toBe('tab');
+    expect(document.querySelector('#provider-models-tab')?.getAttribute('role')).toBe('tab');
+    expect(document.querySelector('#provider-models-panel')?.getAttribute('role')).toBe('tabpanel');
+    expect(document.querySelector('#provider-model-id')).not.toBeNull();
+    expect(document.querySelector('#provider-active-model')).not.toBeNull();
+    expect(document.querySelectorAll('input[name="provider-mode"]')).toHaveLength(5);
   });
 
   it('groups authenticated account actions in one account menu', () => {

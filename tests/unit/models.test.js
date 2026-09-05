@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 
 import modelsModule from '../../server/models.js';
 
-const { createModelRegistry } = modelsModule;
+const { createConfiguredModelRegistry, createModelRegistry } = modelsModule;
 
 describe('model registry', () => {
   it('exposes capabilities without leaking deployment names', () => {
@@ -23,5 +23,23 @@ describe('model registry', () => {
     expect(() => createModelRegistry({ unknown: 'deployment' })).toThrow('Unsupported model');
     expect(() => createModelRegistry({ 'gpt-5.4': 'full' }, 'gpt-5.4-mini'))
       .toThrow('AI_DEFAULT_MODEL is not enabled');
+  });
+
+  it('uses explicit capabilities for arbitrary configured models', () => {
+    const registry = createConfiguredModelRegistry([{
+      id: 'my-deployed-model',
+      deployment: 'production-deployment',
+      modes: ['chat', 'vision'],
+      temperature: true,
+    }], 'my-deployed-model');
+
+    expect(registry.getModel('my-deployed-model')).toMatchObject({
+      deployment: 'production-deployment',
+      modes: ['chat', 'vision'],
+      temperature: true,
+      vision: true,
+    });
+    expect(registry.listModels()).toEqual([expect.objectContaining({ id: 'my-deployed-model' })]);
+    expect(JSON.stringify(registry.listModels())).not.toContain('production-deployment');
   });
 });

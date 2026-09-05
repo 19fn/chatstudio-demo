@@ -45,4 +45,33 @@ function createModelRegistry(deployments = {
   };
 }
 
-module.exports = { createModelRegistry, MODEL_CAPABILITIES };
+function createConfiguredModelRegistry(configuredModels, defaultModel) {
+  if (!Array.isArray(configuredModels) || configuredModels.length === 0) {
+    throw new Error('At least one configured model is required');
+  }
+  if (!configuredModels.some((model) => model.id === defaultModel)) {
+    throw new Error('Configured default model is not enabled');
+  }
+
+  const byId = new Map(configuredModels.map((model) => [model.id, {
+    id: model.id,
+    label: model.label || model.id,
+    description: model.description || 'Configured provider model.',
+    deployment: model.deployment,
+    modes: model.modes,
+    temperature: model.temperature,
+    vision: model.modes.includes('vision'),
+    reasoning: false,
+  }]));
+  return {
+    defaultModel,
+    getModel(modelId) {
+      return byId.get(modelId) || null;
+    },
+    listModels() {
+      return [...byId.values()].map(({ deployment: _deployment, ...model }) => model);
+    },
+  };
+}
+
+module.exports = { createConfiguredModelRegistry, createModelRegistry, MODEL_CAPABILITIES };

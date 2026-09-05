@@ -14,7 +14,7 @@ const { configurationStatus, loadConfig } = require('./server/config');
 const { createConversationRepository, createConversationRouter } = require('./server/conversations');
 const { databaseReady } = require('./server/db');
 const { createLogger, requestLogger } = require('./server/logger');
-const { createModelRegistry } = require('./server/models');
+const { createConfiguredModelRegistry, createModelRegistry } = require('./server/models');
 const { createProviderSettingsRepository, createProviderSettingsRouter } = require('./server/provider-settings');
 
 function createApp(options = {}) {
@@ -37,6 +37,12 @@ function createApp(options = {}) {
       ? await providerSettingsRepository.getRuntime(user)
       : null;
     if (savedSettings) {
+      if (!savedSettings.activeModelId || savedSettings.models.length === 0) {
+        const error = new Error('Configure and select a provider model before starting a chat.');
+        error.code = 'runtime_configuration_required';
+        throw error;
+      }
+      const modelRegistry = createConfiguredModelRegistry(savedSettings.models, savedSettings.activeModelId);
       return {
         aiClient: aiClientFactory({
           endpoint: savedSettings.endpoint,
@@ -44,7 +50,7 @@ function createApp(options = {}) {
           apiVersion: savedSettings.apiVersion,
           timeoutMs: config.ai.timeoutMs,
         }),
-        getModel: createModelRegistry({ [savedSettings.modelId]: savedSettings.deploymentName }, savedSettings.modelId).getModel,
+        getModel: modelRegistry.getModel,
       };
     }
     if (!hasEnvironmentRuntime) {

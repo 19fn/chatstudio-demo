@@ -13,6 +13,7 @@ const state = {
   image: null,
   busy: false,
   requestController: null,
+  providerSettings: null,
 };
 
 const elements = Object.fromEntries([
@@ -27,7 +28,10 @@ const elements = Object.fromEntries([
   'knowledge-close', 'knowledge-role-note', 'upload-button', 'refresh-files', 'file-list', 'toast',
   'profile-dialog', 'profile-close', 'profile-details',
   'provider-settings-dialog', 'provider-settings-close', 'provider-settings-form', 'provider-select',
-  'provider-endpoint', 'provider-deployment', 'provider-model', 'provider-api-version', 'provider-api-key',
+  'provider-endpoint', 'provider-api-version', 'provider-api-key', 'provider-basic-tab', 'provider-models-tab',
+  'provider-basic-panel', 'provider-models-panel', 'provider-active-model', 'provider-model-list',
+  'provider-model-form', 'provider-model-editing', 'provider-model-id', 'provider-deployment',
+  'provider-supports-temperature', 'provider-model-submit', 'provider-model-cancel',
 ].map((id) => [id, document.getElementById(id)]));
 
 const prompts = [
@@ -77,13 +81,123 @@ function renderProfile(verifiedProfile) {
 
 async function openProviderSettings() {
   const { settings } = await apiFetch('/api/provider-settings');
+  state.providerSettings = settings;
   elements['provider-select'].value = settings?.provider || 'azure-openai';
   elements['provider-endpoint'].value = settings?.endpoint || '';
-  elements['provider-deployment'].value = settings?.deploymentName || '';
-  elements['provider-model'].value = settings?.modelId || 'gpt-5.4-mini';
   elements['provider-api-version'].value = settings?.apiVersion || '2025-04-01-preview';
   elements['provider-api-key'].value = '';
+  elements['provider-api-key'].required = !settings?.hasApiKey;
+  renderProviderModels();
+  selectProviderTab('basic');
   elements['provider-settings-dialog'].showModal();
+}
+
+function selectProviderTab(tab) {
+  const basic = tab === 'basic';
+  elements['provider-basic-tab'].setAttribute('aria-selected', String(basic));
+  elements['provider-models-tab'].setAttribute('aria-selected', String(!basic));
+  elements['provider-basic-panel'].hidden = !basic;
+  elements['provider-models-panel'].hidden = basic;
+}
+
+function configuredModel(model) {
+  return {
+    id: model.id,
+    label: model.id,
+    description: `Deployment: ${model.deployment}`,
+    modes: model.modes,
+    temperature: model.temperature,
+    vision: model.modes.includes('vision'),
+    reasoning: false,
+  };
+}
+
+function loadConfiguredModels(settings) {
+  if (!settings?.models?.length) return;
+  state.models = settings.models.map(configuredModel);
+  state.defaultModel = settings.activeModelId;
+  elements['model-select'].replaceChildren(...state.models.map((model) => new Option(model.label, model.id)));
+  elements['model-select'].value = state.defaultModel;
+  updateCapabilities();
+}
+
+async function loadProviderModels() {
+  if (!state.authConfig?.providerSettingsEnabled) return;
+  const { settings } = await apiFetch('/api/provider-settings');
+  if (settings?.models?.length) loadConfiguredModels(settings);
+}
+
+function resetProviderModelForm() {
+  elements['provider-model-form'].reset();
+  elements['provider-model-editing'].value = '';
+  elements['provider-model-id'].disabled = false;
+  document.querySelector('input[name="provider-mode"][value="chat"]').checked = true;
+  elements['provider-model-submit'].textContent = 'Add model';
+  elements['provider-model-cancel'].classList.add('hidden');
+}
+
+function renderProviderModels() {
+  const settings = state.providerSettings;
+  const models = settings?.models || [];
+  elements['provider-active-model'].replaceChildren(...models.map((model) => new Option(model.id, model.id)));
+  elements['provider-active-model'].value = settings?.activeModelId || '';
+  elements['provider-active-model'].disabled = models.length === 0;
+  elements['provider-model-list'].replaceChildren(...models.map((model) => {
+    const item = document.createElement('li');
+    const details = document.createElement('div');
+    const name = document.createElement('strong');
+    name.textContent = model.id;
+    const deployment = document.createElement('small');
+    deployment.textContent = model.deployment;
+    details.append(name, deployment);
+    const edit = document.createElement('button');
+    edit.className = 'icon-button';
+    edit.type = 'button';
+    edit.textContent = '✎';
+    edit.title = `Edit ${model.id}`;
+    edit.setAttribute('aria-label', edit.title);
+    edit.addEventListener('click', () => {
+      elements['provider-model-editing'].value = model.id;
+      elements['provider-model-id'].value = model.id;
+      elements['provider-model-id'].disabled = true;
+      elements['provider-deployment'].value = model.deployment;
+      document.querySelectorAll('input[name="provider-mode"]').forEach((input) => { input.checked = model.modes.includes(input.value); });
+      elements['provider-supports-temperature'].checked = model.temperature;
+      elements['provider-model-submit'].textContent = 'Save model';
+      elements['provider-model-cancel'].classList.remove('hidden');
+    });
+    const remove = document.createElement('button');
+    remove.className = 'icon-button';
+    remove.type = 'button';
+    remove.textContent = '×';
+    remove.title = `Delete ${model.id}`;
+    remove.setAttribute('aria-label', remove.title);
+    remove.disabled = model.id === settings.activeModelId;
+    remove.addEventListener('click', () => removeProviderModel(model.id).catch((error) => showToast(error.message)));
+    item.append(details, edit, remove);
+    return item;
+  }));
+}
+
+function providerModelPayload() {
+  return {
+    modelId: elements['provider-model-id'].value.trim(),
+    deploymentName: elements['provider-deployment'].value.trim(),
+    modes: [...document.querySelectorAll('input[name="provider-mode"]:checked')].map((input) => input.value),
+    supportsTemperature: elements['provider-supports-temperature'].checked,
+  };
+}
+
+function updateProviderSettings(settings) {
+  state.providerSettings = settings;
+  renderProviderModels();
+  loadConfiguredModels(settings);
+}
+
+async function removeProviderModel(modelId) {
+  const { settings } = await apiFetch(`/api/provider-settings/models/${encodeURIComponent(modelId)}`, { method: 'DELETE' });
+  updateProviderSettings(settings);
+  resetProviderModelForm();
 }
 
 function setAuthenticated(account, token) {
@@ -112,7 +226,10 @@ function setAuthenticated(account, token) {
   elements['delete-conversation'].disabled = !authenticated || !state.conversationId;
   updateComposer();
   updateCapabilities();
-  if (authenticated) loadUsage().catch(() => {});
+  if (authenticated) {
+    loadUsage().catch(() => {});
+    loadProviderModels().catch(() => {});
+  }
 }
 
 async function apiFetch(url, options = {}) {
@@ -534,6 +651,8 @@ function bindEvents() {
     openProviderSettings().catch((error) => showToast(error.message));
   });
   elements['provider-settings-close'].addEventListener('click', () => elements['provider-settings-dialog'].close());
+  elements['provider-basic-tab'].addEventListener('click', () => selectProviderTab('basic'));
+  elements['provider-models-tab'].addEventListener('click', () => selectProviderTab('models'));
   elements['provider-settings-form'].addEventListener('submit', async (event) => {
     event.preventDefault();
     try {
@@ -543,22 +662,50 @@ function bindEvents() {
         body: JSON.stringify({
           provider: elements['provider-select'].value,
           endpoint: elements['provider-endpoint'].value,
-          deploymentName: elements['provider-deployment'].value,
-          modelId: elements['provider-model'].value,
           apiVersion: elements['provider-api-version'].value,
-          apiKey: elements['provider-api-key'].value,
+          apiKey: elements['provider-api-key'].value || undefined,
         }),
       });
       elements['provider-endpoint'].value = settings.settings.endpoint;
-      elements['provider-deployment'].value = settings.settings.deploymentName;
-      elements['provider-model'].value = settings.settings.modelId;
       elements['provider-api-version'].value = settings.settings.apiVersion;
       elements['provider-api-key'].value = '';
+      elements['provider-api-key'].required = false;
+      updateProviderSettings(settings.settings);
       showToast('Provider settings saved.');
     } catch (error) {
       showToast(error.message);
     }
   });
+  elements['provider-active-model'].addEventListener('change', async () => {
+    try {
+      const { settings } = await apiFetch('/api/provider-settings/active-model', {
+        method: 'PUT', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ modelId: elements['provider-active-model'].value }),
+      });
+      updateProviderSettings(settings);
+    } catch (error) {
+      showToast(error.message);
+    }
+  });
+  elements['provider-model-form'].addEventListener('submit', async (event) => {
+    event.preventDefault();
+    try {
+      const editing = elements['provider-model-editing'].value;
+      const payload = providerModelPayload();
+      const { settings } = await apiFetch(editing
+        ? `/api/provider-settings/models/${encodeURIComponent(editing)}`
+        : '/api/provider-settings/models', {
+        method: editing ? 'PATCH' : 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(editing ? { ...payload, modelId: undefined } : payload),
+      });
+      updateProviderSettings(settings);
+      resetProviderModelForm();
+      showToast(editing ? 'Model updated.' : 'Model added.');
+    } catch (error) {
+      showToast(error.message);
+    }
+  });
+  elements['provider-model-cancel'].addEventListener('click', resetProviderModelForm);
   elements['refresh-files'].addEventListener('click', () => loadFiles().catch((error) => showToast(error.message)));
   elements['upload-button'].addEventListener('click', () => elements['file-input'].click());
   elements['sign-in-button'].addEventListener('click', async () => {

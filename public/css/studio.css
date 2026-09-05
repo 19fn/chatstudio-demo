@@ -90,6 +90,7 @@ h2 { font-size: 18px; }
 .conversation-item strong, .conversation-item small { display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .conversation-item small, .empty-copy { color: var(--muted); }
 .sidebar-footer { margin-top: auto; padding-top: 20px; border-top: 1px solid var(--line); }
+.workspace-usage { margin: 0 0 12px; color: var(--muted); font-size: 13px; font-weight: 700; }
 
 .chat-panel { width: 100%; min-width: 0; min-height: 0; display: grid; grid-template-rows: auto 1fr auto auto; overflow: hidden; background: rgba(255,255,255,0.78); }
 .chat-toolbar { min-height: 76px; padding: 16px 24px; border-bottom: 1px solid var(--line); background: rgba(255,255,255,0.9); }

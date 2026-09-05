@@ -77,7 +77,7 @@ describe('chat route', () => {
       stream: vi.fn(async ({ onEvent }) => {
         onEvent({ type: 'content', content: 'Hello ' });
         onEvent({ type: 'content', content: 'world' });
-        return { message: 'Hello world', citations: [], followUpQuestions: [] };
+        return { message: 'Hello world', citations: [], followUpQuestions: [], tokens: { total_tokens: 12 } };
       }),
     };
     const response = await request(createApp({ config, conversationRepository: conversations, aiClient }))
@@ -92,7 +92,7 @@ describe('chat route', () => {
     expect(response.text).toContain('"content":"Hello "');
     expect(response.text).toContain('"type":"done"');
     expect(conversations.appendExchange).toHaveBeenCalledWith(
-      expect.any(Object), expect.any(String), 'Hello', 'Hello world', expect.any(Object),
+      expect.any(Object), expect.any(String), 'Hello', 'Hello world', { citations: [], tokens: { total_tokens: 12 } },
     );
   });
 

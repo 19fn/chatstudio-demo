@@ -137,29 +137,55 @@
           <div><span class="eyebrow">Connections</span><h2 id="provider-settings-title">LLM provider</h2></div>
           <button class="icon-button" id="provider-settings-close" type="button" aria-label="Close provider settings">×</button>
         </div>
-        <form id="provider-settings-form" class="provider-settings-form">
-          <label for="provider-select">Provider</label>
-          <select id="provider-select" name="provider">
-            <option value="azure-openai">Azure OpenAI</option>
-          </select>
-          <label for="provider-endpoint">Endpoint</label>
-          <input id="provider-endpoint" name="endpoint" type="url" placeholder="https://your-resource.openai.azure.com" required>
-          <label for="provider-deployment">Deployment name</label>
-          <input id="provider-deployment" name="deploymentName" type="text" required>
-          <label for="provider-model">Model</label>
-          <select id="provider-model" name="modelId">
-            <option value="gpt-5.4-mini">GPT-5.4 mini</option>
-            <option value="gpt-5.4">GPT-5.4</option>
-          </select>
-          <label for="provider-api-version">API version</label>
-          <input id="provider-api-version" name="apiVersion" type="text" value="2025-04-01-preview" required>
-          <label for="provider-api-key">API key</label>
-          <input id="provider-api-key" name="apiKey" type="password" autocomplete="new-password" required>
-          <p class="provider-settings-note">Saved keys are encrypted and are never shown again.</p>
-          <div class="knowledge-actions">
-            <button class="button button-primary" type="submit">Save provider</button>
+        <div class="provider-tabs" role="tablist" aria-label="Provider configuration">
+          <button id="provider-basic-tab" type="button" role="tab" aria-selected="true" aria-controls="provider-basic-panel">Basic config</button>
+          <button id="provider-models-tab" type="button" role="tab" aria-selected="false" aria-controls="provider-models-panel">Model config</button>
+        </div>
+        <section id="provider-basic-panel" role="tabpanel" aria-labelledby="provider-basic-tab">
+          <form id="provider-settings-form" class="provider-settings-form">
+            <label for="provider-select">Provider</label>
+            <select id="provider-select" name="provider">
+              <option value="azure-openai">Azure OpenAI</option>
+            </select>
+            <label for="provider-endpoint">Endpoint</label>
+            <input id="provider-endpoint" name="endpoint" type="url" placeholder="https://your-resource.openai.azure.com" required>
+            <label for="provider-api-version">API version</label>
+            <input id="provider-api-version" name="apiVersion" type="text" value="2025-04-01-preview" required>
+            <label for="provider-api-key">API key</label>
+            <input id="provider-api-key" name="apiKey" type="password" autocomplete="new-password" required>
+            <p class="provider-settings-note">Saved keys are encrypted and are never shown again.</p>
+            <div class="knowledge-actions">
+              <button class="button button-primary" type="submit">Save provider</button>
+            </div>
+          </form>
+        </section>
+        <section id="provider-models-panel" role="tabpanel" aria-labelledby="provider-models-tab" hidden>
+          <div class="provider-settings-form">
+            <label for="provider-active-model">Default model</label>
+            <select id="provider-active-model"></select>
+            <ul id="provider-model-list" class="provider-model-list" aria-label="Configured models"></ul>
           </div>
-        </form>
+          <form id="provider-model-form" class="provider-settings-form">
+            <input id="provider-model-editing" type="hidden">
+            <label for="provider-model-id">Model ID</label>
+            <input id="provider-model-id" type="text" placeholder="gpt-4o" required>
+            <label for="provider-deployment">Deployment name</label>
+            <input id="provider-deployment" type="text" placeholder="production-gpt-4o" required>
+            <fieldset class="provider-model-modes">
+              <legend>Supported modes</legend>
+              <label><input type="checkbox" name="provider-mode" value="chat" checked disabled> Chat</label>
+              <label><input type="checkbox" name="provider-mode" value="knowledge"> Knowledge</label>
+              <label><input type="checkbox" name="provider-mode" value="vision"> Vision</label>
+              <label><input type="checkbox" name="provider-mode" value="document"> Document</label>
+              <label><input type="checkbox" name="provider-mode" value="meeting"> Meeting</label>
+            </fieldset>
+            <label class="provider-toggle"><input id="provider-supports-temperature" type="checkbox"> Supports temperature</label>
+            <div class="knowledge-actions">
+              <button class="button button-primary" id="provider-model-submit" type="submit">Add model</button>
+              <button class="button button-secondary hidden" id="provider-model-cancel" type="button">Cancel edit</button>
+            </div>
+          </form>
+        </section>
       </dialog>
     </main>
     <div id="toast" class="toast hidden" role="status" aria-live="polite"></div>

@@ -51,4 +51,29 @@ describe('provider settings UI', () => {
     expect(trigger?.querySelector('.account-menu-logo')?.getAttribute('src')).toBe('/img/logo2.png');
     expect(trigger?.querySelector('.account-menu-icon')).not.toBeNull();
   });
+
+  it('keeps the anonymous sign-in logo visible on hover', () => {
+    const document = new JSDOM(page).window.document;
+    const trigger = document.querySelector('#sign-in-button');
+
+    expect(trigger?.querySelector('.account-menu-logo')).not.toBeNull();
+    expect(trigger?.textContent?.trim()).toBe('');
+    expect(trigger?.getAttribute('aria-label')).toBe('Sign in');
+    expect(trigger?.getAttribute('title')).toBe('Sign in');
+    expect(studio).not.toContain("sign-in-toggle):hover .account-menu-logo");
+  });
+
+  it('provides an anonymous sign-in dialog and opens it from the page', () => {
+    const document = new JSDOM(page).window.document;
+    const dialog = document.querySelector('#sign-in-dialog');
+
+    expect(dialog?.getAttribute('aria-labelledby')).toBe('sign-in-title');
+    expect(document.querySelector('#sign-in-dialog-button')?.textContent).toBe('Sign in');
+    expect(document.querySelector('#sign-in-dialog-button')?.classList.contains('button-accent')).toBe(true);
+    expect(document.querySelector('#sign-in-dialog-exit')?.textContent).toBe('Exit');
+    expect(document.querySelector('#sign-in-dialog-exit')?.classList.contains('button-danger')).toBe(true);
+    expect(studio).toContain("elements['sign-in-dialog'].showModal()");
+    expect(studio).toContain("elements['sign-in-dialog'].close()");
+    expect(studio).toContain("if (!state.account && !elements['sign-in-dialog'].open)");
+  });
 });

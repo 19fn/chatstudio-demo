@@ -55,8 +55,8 @@ button:disabled, select:disabled, textarea:disabled, input:disabled { cursor: no
 .account-menu-icon::before, .account-menu-icon::after { content: ''; position: absolute; left: 0; }
 .account-menu-icon::before { top: -7px; }
 .account-menu-icon::after { top: 7px; }
-.account-menu-toggle:hover .account-menu-logo, .account-menu-toggle:focus-visible .account-menu-logo { opacity: 0; }
-.account-menu-toggle:hover .account-menu-icon, .account-menu-toggle:focus-visible .account-menu-icon { opacity: 1; }
+.account-menu-toggle:not(.sign-in-toggle):hover .account-menu-logo, .account-menu-toggle:not(.sign-in-toggle):focus-visible .account-menu-logo { opacity: 0; }
+.account-menu-toggle:not(.sign-in-toggle):hover .account-menu-icon, .account-menu-toggle:not(.sign-in-toggle):focus-visible .account-menu-icon { opacity: 1; }
 .account-menu-items { position: absolute; top: calc(100% + 8px); right: 0; z-index: 13; display: grid; width: 190px; padding: 6px; border: 1px solid var(--line); border-radius: 6px; background: var(--surface); box-shadow: var(--shadow); }
 .account-menu-items button { min-height: 38px; border: 0; border-radius: 4px; background: transparent; color: var(--ink); padding: 0 10px; text-align: left; font-weight: 700; }
 .account-menu-items button:hover, .account-menu-items button:focus-visible { background: var(--accent-soft); }
@@ -142,6 +142,13 @@ select { min-height: 40px; border: 1px solid var(--line); border-radius: 4px; ba
 
 dialog { width: min(620px, calc(100% - 32px)); border: 0; border-radius: 6px; padding: 24px; box-shadow: var(--shadow); }
 dialog::backdrop { background: rgba(12, 14, 16, 0.58); }
+.sign-in-dialog-logo { width: 82px; height: 54px; object-fit: contain; }
+.sign-in-dialog-copy { max-width: 460px; margin: 24px 0; color: var(--muted); line-height: 1.6; }
+#sign-in-dialog-button { min-width: 132px; }
+.button-accent { border-color: var(--accent); color: var(--accent); }
+.button-accent:hover { border-color: var(--accent); background: var(--accent); color: white; }
+.button-danger { border-color: var(--danger); color: var(--danger); }
+.button-danger:hover { border-color: var(--danger); background: var(--danger); color: white; }
 .knowledge-actions { display: flex; gap: 8px; margin: 20px 0; }
 .file-list { padding: 0; list-style: none; }
 .file-list li { display: flex; justify-content: space-between; gap: 12px; padding: 12px 0; border-top: 1px solid var(--line); }

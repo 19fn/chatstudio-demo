@@ -138,3 +138,6 @@ dist
 
 # vsc
 .vscode/
+
+# Internal planning prompts
+.github/prompts/plan-modernizeChatStudio.prompt.md

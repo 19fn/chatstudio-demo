@@ -15,7 +15,9 @@
     <header class="app-header">
       <button class="icon-button mobile-only" id="navigation-toggle" type="button" aria-label="Open conversations" title="Open conversations">☰</button>
       <div class="account-actions">
-        <button class="button button-secondary" id="sign-in-button" type="button">Sign in</button>
+        <button class="account-menu-toggle sign-in-toggle" id="sign-in-button" type="button" aria-label="Sign in" title="Sign in">
+          <img src="/img/logo2.png" alt="" class="account-menu-logo">
+        </button>
         <div class="account-menu hidden" id="account-menu">
           <button class="account-menu-toggle" id="account-menu-toggle" type="button" aria-label="Open account menu" aria-expanded="false" aria-controls="account-menu-items" title="Account menu">
             <img src="/img/logo2.png" alt="" class="account-menu-logo">
@@ -188,6 +190,17 @@
         </section>
       </dialog>
     </main>
+    <dialog id="sign-in-dialog" aria-labelledby="sign-in-title">
+      <div class="dialog-heading">
+        <div><span class="eyebrow">Chat Studio</span><h2 id="sign-in-title">Sign in to continue</h2></div>
+        <img src="/img/logo2.png" alt="" class="sign-in-dialog-logo">
+      </div>
+      <p class="sign-in-dialog-copy">Use your organization account to open your workspace, conversations, and approved knowledge.</p>
+      <div class="knowledge-actions">
+        <button class="button button-secondary button-accent" id="sign-in-dialog-button" type="button">Sign in</button>
+        <button class="button button-secondary button-danger" id="sign-in-dialog-exit" type="button">Exit</button>
+      </div>
+    </dialog>
     <div id="toast" class="toast hidden" role="status" aria-live="polite"></div>
     <script src="/vendor/msal/msal-browser.min.js"></script>
     <script type="module" src="/js/studio.js"></script>

@@ -6,6 +6,7 @@ import { JSDOM } from 'jsdom';
 
 const directory = path.dirname(fileURLToPath(import.meta.url));
 const page = fs.readFileSync(path.join(directory, '../../public/index.html'), 'utf8');
+const studio = fs.readFileSync(path.join(directory, '../../public/js/studio.js'), 'utf8');
 
 describe('provider settings UI', () => {
   it('renders the Azure OpenAI configuration controls', () => {
@@ -16,6 +17,7 @@ describe('provider settings UI', () => {
     expect(document.querySelector('#provider-select')?.value).toBe('azure-openai');
     expect(document.querySelector('#provider-endpoint')?.getAttribute('type')).toBe('url');
     expect(document.querySelector('#provider-api-key')?.getAttribute('type')).toBe('password');
+    expect(document.querySelector('#provider-api-key')?.value).toBe('');
     expect(document.querySelector('#provider-deployment')).not.toBeNull();
     expect(document.querySelector('#provider-api-version')?.value).toBe('2025-04-01-preview');
     expect(document.querySelector('#provider-basic-tab')?.getAttribute('role')).toBe('tab');
@@ -24,6 +26,8 @@ describe('provider settings UI', () => {
     expect(document.querySelector('#provider-model-id')).not.toBeNull();
     expect(document.querySelector('#provider-active-model')).not.toBeNull();
     expect(document.querySelectorAll('input[name="provider-mode"]')).toHaveLength(5);
+    expect(studio).toContain("placeholder = settings?.hasApiKey ? '**********' : ''");
+    expect(studio).toContain("elements['provider-api-key'].value = ''");
   });
 
   it('groups authenticated account actions in one account menu', () => {

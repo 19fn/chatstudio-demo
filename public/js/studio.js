@@ -32,6 +32,7 @@ const elements = Object.fromEntries([
   'provider-basic-panel', 'provider-models-panel', 'provider-active-model', 'provider-model-list',
   'provider-model-form', 'provider-model-editing', 'provider-model-id', 'provider-deployment',
   'provider-supports-temperature', 'provider-model-submit', 'provider-model-cancel',
+  'sign-in-dialog', 'sign-in-dialog-button', 'sign-in-dialog-exit',
 ].map((id) => [id, document.getElementById(id)]));
 
 const prompts = [
@@ -61,6 +62,10 @@ function showToast(message) {
 function closeAccountMenu() {
   elements['account-menu-items'].classList.add('hidden');
   elements['account-menu-toggle'].setAttribute('aria-expanded', 'false');
+}
+
+function openSignInDialog() {
+  if (!state.account && !elements['sign-in-dialog'].open) elements['sign-in-dialog'].showModal();
 }
 
 async function loadUsage() {
@@ -711,6 +716,9 @@ function bindEvents() {
   elements['refresh-files'].addEventListener('click', () => loadFiles().catch((error) => showToast(error.message)));
   elements['upload-button'].addEventListener('click', () => elements['file-input'].click());
   elements['sign-in-button'].addEventListener('click', async () => {
+    openSignInDialog();
+  });
+  elements['sign-in-dialog-button'].addEventListener('click', async () => {
     try {
       await signIn();
     } catch (error) {
@@ -719,12 +727,14 @@ function bindEvents() {
       showToast(error.errorMessage || error.message || 'Sign-in failed.');
     }
   });
+  elements['sign-in-dialog-exit'].addEventListener('click', () => elements['sign-in-dialog'].close());
   elements['sign-out-button'].addEventListener('click', () => {
     closeAccountMenu();
     authClient?.logoutRedirect({ postLogoutRedirectUri: location.origin });
   });
   document.addEventListener('click', (event) => {
     if (!elements['account-menu'].contains(event.target)) closeAccountMenu();
+    if (!state.account && !elements['sign-in-dialog'].open && !event.target.closest('#sign-in-dialog')) openSignInDialog();
   });
 }
 
@@ -732,6 +742,7 @@ async function main() {
   bindEvents();
   await loadModels();
   await initializeAuth();
+  openSignInDialog();
   elements['upload-button'].disabled = !isAdmin();
   elements['refresh-files'].disabled = !state.account;
   elements['knowledge-role-note'].textContent = isAdmin()

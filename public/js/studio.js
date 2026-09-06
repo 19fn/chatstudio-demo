@@ -86,6 +86,7 @@ async function openProviderSettings() {
   elements['provider-endpoint'].value = settings?.endpoint || '';
   elements['provider-api-version'].value = settings?.apiVersion || '2025-04-01-preview';
   elements['provider-api-key'].value = '';
+  elements['provider-api-key'].placeholder = settings?.hasApiKey ? '**********' : '';
   elements['provider-api-key'].required = !settings?.hasApiKey;
   renderProviderModels();
   selectProviderTab('basic');
@@ -669,6 +670,7 @@ function bindEvents() {
       elements['provider-endpoint'].value = settings.settings.endpoint;
       elements['provider-api-version'].value = settings.settings.apiVersion;
       elements['provider-api-key'].value = '';
+      elements['provider-api-key'].placeholder = '**********';
       elements['provider-api-key'].required = false;
       updateProviderSettings(settings.settings);
       showToast('Provider settings saved.');

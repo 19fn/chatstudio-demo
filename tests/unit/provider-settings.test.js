@@ -45,6 +45,19 @@ describe('provider settings', () => {
     );
   });
 
+  it('allows an empty API key when updating an existing saved connection', async () => {
+    const settings = {
+      provider: 'azure-openai', endpoint: 'https://example.openai.azure.com', apiVersion: '2025-04-01-preview', hasApiKey: true, activeModelId: 'custom-chat', models: [],
+    };
+    const repository = { save: vi.fn().mockResolvedValue(settings), get: vi.fn() };
+    const response = await request(createApp({ config, providerSettingsRepository: repository }))
+      .put('/api/provider-settings')
+      .send({ provider: 'azure-openai', endpoint: 'https://example.openai.azure.com', apiVersion: '2025-04-01-preview' });
+
+    expect(response.status).toBe(200);
+    expect(repository.save.mock.calls[0][1]).not.toHaveProperty('apiKey');
+  });
+
   it('creates an arbitrary model and makes it available as the default', async () => {
     const settings = {
       provider: 'azure-openai', endpoint: 'https://example.openai.azure.com', apiVersion: '2025-04-01-preview', hasApiKey: true,
